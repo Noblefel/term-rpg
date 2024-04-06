@@ -1,4 +1,8 @@
-My attempt at making a terminal application, which is a simple RPG where you can battle against various enemies.
+A simple terminal-based RPG where you can battle against various enemies.
+
+<br>
+<img src="https://github.com/Noblefel/term-rpg/blob/main/sample.PNG">
+<br>
 
 # How to play
 
@@ -24,9 +28,11 @@ go run main.go
 ### Enemies
 | Name | Feat |
 | -------- | ------- |  
-| Thug 🥊 | A good all-rounder enemy with decent attributes |
-| Acolyte 🧙| Has damage reduction but lacks in offense |
-| Assasin 🗡️| Deals high damage at the cost of their defense |
-| Snakes 🐍 | Though very low hp, they could deal high damage |
+| Thug 🥊 | A good all-rounder with decent attributes |
+| Acolyte 🧙| Has damage reduction |
+| Assassin 🗡️| Deals high damage |
+| Snakes 🐍 | Though low hp, they could deal high damage |
 
-<img src="https://github.com/Noblefel/term-rpg/blob/main/sample.PNG">
+### Other
+- **Rest**: recover (5 + 10% of player's hp cap + 0-8) of hp
+- **Train**: 20% chance to buff random attributes

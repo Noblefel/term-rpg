@@ -60,10 +60,11 @@ func (p *Player) RecoverHP(min float32) {
 	p.Hp = health
 }
 
-func (p *Player) AddMoney(n float32) {
+func (p *Player) AddMoney(n float32) float32 {
 	if p.Perk == GREED {
 		n += n * 0.15
 	}
 
 	p.Money += n
+	return n
 }

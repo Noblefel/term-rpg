@@ -27,6 +27,7 @@ func newThug() Combatant {
 		Def:      6,
 		HpCap:    80,
 		DmgReduc: 0.04,
+		DropRate: 0.8,
 	}}
 }
 
@@ -39,7 +40,8 @@ func newAcolyte() Combatant {
 		Att:      4,
 		Def:      1,
 		HpCap:    70,
-		DmgReduc: 0.2,
+		DmgReduc: 0.3,
+		DropRate: 1,
 	}}
 }
 
@@ -47,11 +49,12 @@ type assasin struct{ Base }
 
 func newAssasin() Combatant {
 	return &assasin{Base{
-		Name:  "Assasin 🗡️",
-		Hp:    60,
-		Att:   14,
-		Def:   3,
-		HpCap: 60,
+		Name:     "Assassin 🗡️",
+		Hp:       60,
+		Att:      14,
+		Def:      3,
+		HpCap:    60,
+		DropRate: 1.2,
 	}}
 }
 
@@ -59,10 +62,11 @@ type snakes struct{ Base }
 
 func newSnakes() Combatant {
 	return &snakes{Base{
-		Name:  "Snakes 🐍",
-		Hp:    30,
-		Att:   12.5,
-		Def:   1,
-		HpCap: 30,
+		Name:     "Snakes 🐍",
+		Hp:       30,
+		Att:      12.5,
+		Def:      1,
+		HpCap:    30,
+		DropRate: 0,
 	}}
 }

@@ -27,10 +27,9 @@ func TestAttack(t *testing.T) {
 	t.Run("with random sum", func(t *testing.T) {
 		b := Base{Att: 5}
 		got := b.Attack()
-		var want float32
 
 		if b.Att > got {
-			t.Errorf("want greater than %.1f, got %.1f", want, got)
+			t.Errorf("want greater than 5, got %.1f", got)
 		}
 	})
 }
@@ -60,4 +59,36 @@ func TestTakeDamage(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDropLoot(t *testing.T) {
+	tests := []struct {
+		name     string
+		dropRate float32
+		want     float32
+	}{
+		{"with 1x drop rate", 1, 10},
+		{"with 3.3x drop rate", 3.3, 33},
+		{"with 0x drop rate", 0, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := Base{DropRate: tt.dropRate, isTesting: true}
+			got := b.DropLoot()
+
+			if tt.want != got {
+				t.Errorf("want %.1f, got %.1f", tt.want, got)
+			}
+		})
+	}
+
+	t.Run("with random value but 0 drop rate", func(t *testing.T) {
+		b := Base{DropRate: 0}
+		got := b.DropLoot()
+
+		if got != 0 {
+			t.Errorf("want 0, got %.1f", got)
+		}
+	})
 }
