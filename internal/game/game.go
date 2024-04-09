@@ -33,12 +33,18 @@ func New(scanner *bufio.Scanner, dis *display.Display) *Game {
 	}
 }
 
-func (g *Game) Menu() {
+func (g *Game) Start() {
 	if g.p == nil {
 		perk := g.selectPerks()
 		g.p = combat.NewPlayer(perk)
 	}
 
+	for {
+		g.menu()
+	}
+}
+
+func (g *Game) menu() {
 	display.Clear()
 	g.dis.Printf(g.dis.White, "══════════════════════════════════════════════════")
 	g.dis.Center(g.dis.White, "Main Menu")
@@ -80,7 +86,7 @@ func (g *Game) Menu() {
 			g.dis.Printf(g.dis.Red, "Invalid Option\n")
 			continue
 		}
-		g.Menu()
+		return
 	}
 }
 
@@ -91,35 +97,26 @@ func (g *Game) selectPerks() int {
 	g.dis.Printf(g.dis.Green, "══════════════════════════════════════════════════\n")
 
 	fmt.Println("┌─────────────────────────────────────────────")
-	fmt.Println("■ > 1.", combat.Perks[combat.GREED])
+	fmt.Println("■ > 1. 💰 Greed (Gain 15% more loot)")
 	fmt.Println("|─────────────────────────────────────────────")
-	fmt.Println("■ > 2.", combat.Perks[combat.RESILIENCY])
+	fmt.Println("■ > 2. 🛡️  Resiliency (+1 Def point and 10% dmg reduction)")
 	fmt.Println("|─────────────────────────────────────────────")
-	fmt.Println("■ > 3.", combat.Perks[combat.HAVOC])
+	fmt.Println("■ > 3. ⚔️   Havoc (+25% Attack, but -15 HP cap)")
 	fmt.Println("└─────────────────────────────────────────────")
 
-	var perk int
 	for {
 		g.dis.Printf(g.dis.White, "Input: ")
 		g.scanner.Scan()
 
-		n, err := strconv.Atoi(g.scanner.Text())
-		if err != nil {
-			g.dis.Printf(g.dis.Red, "Should be a number\n")
-			continue
+		t := g.scanner.Text()
+		switch t {
+		case "1", "2", "3":
+			perk, _ := strconv.Atoi(t)
+			return perk
 		}
 
-		_, ok := combat.Perks[n]
-		if !ok {
-			g.dis.Printf(g.dis.Red, "Invalid Perk\n")
-			continue
-		}
-
-		perk = n
-		break
+		g.dis.Printf(g.dis.Red, "Invalid Perk\n")
 	}
-
-	return perk
 }
 
 func (g *Game) attributes() {
@@ -176,24 +173,7 @@ func (g *Game) train() {
 	if rand.Intn(100) < 20 {
 		g.dis.Center(g.dis.Green, "Hard work pays off 💪\n")
 		fmt.Println("──────────────────────────────────────────────")
-
-		switch rand.Intn(4) {
-		case 0:
-			n := 1 + rand.Float32()*5
-			g.p.HpCap += n
-			g.dis.Center(g.dis.White, "Hp cap increased by %.1f", n)
-		case 1:
-			n := 0.5 + rand.Float32()*2
-			g.p.Att += n
-			g.dis.Center(g.dis.White, "Attack increased by %.1f", n)
-		case 2:
-			n := 0.5 + rand.Float32()*2
-			g.p.Def += n
-			g.dis.Center(g.dis.White, "Defense increased by %.1f", n)
-		case 3:
-			g.p.DmgReduc += 0.01
-			g.dis.Center(g.dis.White, "Dmg reduction increased by 1%%")
-		}
+		g.dis.Center(g.dis.White, g.p.Train(rand.Intn(4)))
 	} else {
 		g.dis.Center(g.dis.Red, "Training did not yield any result")
 		fmt.Println("──────────────────────────────────────────────")
@@ -217,7 +197,6 @@ func (g *Game) battle() {
 		g.dis.Printf(g.dis.Red, "══════════════════════════════════════════════════\n")
 		g.dis.Center(nil, "■ > Press enter to proceed\n")
 		g.scanner.Scan()
-		display.Clear()
 	}
 
 	for {

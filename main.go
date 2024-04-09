@@ -13,5 +13,5 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	app := game.New(scanner, d)
-	app.Menu()
+	app.Start()
 }

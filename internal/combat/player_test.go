@@ -106,3 +106,41 @@ func TestAddMoney(t *testing.T) {
 		}
 	})
 }
+
+func TestTrain(t *testing.T) {
+	t.Run("buff hp cap", func(t *testing.T) {
+		p := Player{}
+		p.Train(0)
+
+		if p.HpCap < 1 {
+			t.Errorf("%.1f should be more than %.1f", p.HpCap, 1.0)
+		}
+	})
+
+	t.Run("buff att", func(t *testing.T) {
+		p := Player{}
+		p.Train(1)
+
+		if p.Att < 0.5 {
+			t.Errorf("%.1f should be more than %.1f", p.Att, 0.5)
+		}
+	})
+
+	t.Run("buff def", func(t *testing.T) {
+		p := Player{}
+		p.Train(2)
+
+		if p.Def < 0.5 {
+			t.Errorf("%.1f should be more than %.1f", p.Def, 0.5)
+		}
+	})
+
+	t.Run("buff dmg reduction", func(t *testing.T) {
+		p := Player{}
+		p.Train(3)
+
+		if p.DmgReduc != 0.01 {
+			t.Errorf("%.2f should be %.2f (%.1f%%)", p.DmgReduc, 0.01, 0.01*100)
+		}
+	})
+}

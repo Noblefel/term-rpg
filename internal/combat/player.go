@@ -1,5 +1,10 @@
 package combat
 
+import (
+	"fmt"
+	"math/rand"
+)
+
 const (
 	GREED int = iota + 1
 	RESILIENCY
@@ -67,4 +72,27 @@ func (p *Player) AddMoney(n float32) float32 {
 
 	p.Money += n
 	return n
+}
+
+// Train buffs player's attribute with random value
+func (p *Player) Train(n int) string {
+	switch n {
+	case 0:
+		n := 1 + rand.Float32()*5
+		p.HpCap += n
+		return fmt.Sprintf("Hp cap increased by %.1f", n)
+	case 1:
+		n := 0.5 + rand.Float32()*2
+		p.Att += n
+		return fmt.Sprintf("Attack increased by %.1f", n)
+	case 2:
+		n := 0.5 + rand.Float32()*2
+		p.Def += n
+		return fmt.Sprintf("Defense increased by %.1f", n)
+	case 3:
+		p.DmgReduc += 0.01
+		return "Dmg reduction increased by 1%"
+	}
+
+	return ""
 }
