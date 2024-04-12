@@ -8,22 +8,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Noblefel/term-rpg/internal/combat"
+	"github.com/Noblefel/term-rpg/internal/battle"
 	"github.com/Noblefel/term-rpg/internal/display"
-)
-
-const (
-	WIN int = iota
-	LOSE
-	FLED
-	NEXT
+	"github.com/Noblefel/term-rpg/internal/entity"
 )
 
 type Game struct {
 	scanner *bufio.Scanner
 	dis     *display.Display
-	p       *combat.Player
-	e       combat.Combatant
+	p       *entity.Player
 }
 
 func New(scanner *bufio.Scanner, dis *display.Display) *Game {
@@ -36,7 +29,7 @@ func New(scanner *bufio.Scanner, dis *display.Display) *Game {
 func (g *Game) Start() {
 	if g.p == nil {
 		perk := g.selectPerks()
-		g.p = combat.NewPlayer(perk)
+		g.p = entity.NewPlayer(perk)
 	}
 
 	for {
@@ -56,7 +49,7 @@ func (g *Game) menu() {
 	g.dis.Printf(g.dis.White, "💰 Money: ")
 	g.dis.Printf(g.dis.Green, " %.1f\n", g.p.Money)
 	g.dis.Printf(g.dis.White, "✨ Perk: ")
-	perk := strings.Split(combat.Perks[g.p.Perk], "(")[0]
+	perk := strings.Split(entity.Perks[g.p.Perk], "(")[0]
 	fmt.Printf("%s\n\n", perk)
 
 	fmt.Println("┌─────────────────────────────────────────────")
@@ -184,55 +177,47 @@ func (g *Game) train() {
 }
 
 func (g *Game) battle() {
-	var turn int
-	var isEnemyTurn bool
-	var res int
-	log := "-- No recent log --"
 	display.Clear()
-
-	if g.e == nil {
-		g.e = combat.SpawnRandom()
-		g.dis.Printf(g.dis.Red, "══════════════════════════════════════════════════")
-		g.dis.Center(g.dis.White, "You encountered %s", g.e.Attr().Name)
-		g.dis.Printf(g.dis.Red, "══════════════════════════════════════════════════\n")
-		g.dis.Center(nil, "■ > Press enter to proceed\n")
-		g.scanner.Scan()
-	}
+	b := battle.New(entity.SpawnRandom())
+	g.dis.Printf(g.dis.Red, "══════════════════════════════════════════════════")
+	g.dis.Center(g.dis.White, "You encountered %s", b.EnemyAttr.Name)
+	g.dis.Printf(g.dis.Red, "══════════════════════════════════════════════════\n")
+	g.dis.Center(nil, "■ > Press enter to proceed\n")
+	g.scanner.Scan()
 
 	for {
 		display.Clear()
 		g.dis.Center(g.dis.White, "Battle 🔥")
 		g.dis.Printf(g.dis.White, "══════════════════════════════════════════════════")
-		g.dis.Center(nil, log)
+		g.dis.Center(nil, b.Log)
 		fmt.Print("\n")
 
-		e := g.e.Attr()
 		g.dis.Bar(g.p.Hp, g.p.HpCap)
 		g.dis.Printf(g.dis.White, "❤️  %.1f ", g.p.Hp)
 		fmt.Printf("(You) \n\n")
-		g.dis.Bar(e.Hp, e.HpCap)
-		g.dis.Printf(g.dis.White, "❤️  %.1f ", e.Hp)
-		fmt.Printf("(%s ) \n\n", e.Name)
+		g.dis.Bar(b.EnemyAttr.Hp, b.EnemyAttr.HpCap)
+		g.dis.Printf(g.dis.White, "❤️  %.1f ", b.EnemyAttr.Hp)
+		fmt.Printf("(%s ) \n\n", b.EnemyAttr.Name)
 
-		if isEnemyTurn {
-			res, log = g.enemyTurn(e)
+		if b.IsEnemyTurn {
+			g.enemyTurn(b)
 		} else {
-			res, log = g.playerTurn(e)
+			g.playerTurn(b)
 		}
 
-		isEnemyTurn = !isEnemyTurn
-		turn++
+		b.IsEnemyTurn = !b.IsEnemyTurn
+		b.Turn++
 
-		if res != NEXT {
+		if b.Status != battle.NEXT {
 			display.Clear()
-			g.dis.Center(nil, log)
-			g.battleConclusion(res, turn, e)
+			g.dis.Center(nil, b.Log)
+			g.battleConclusion(b)
 			return
 		}
 	}
 }
 
-func (g *Game) playerTurn(e combat.Base) (int, string) {
+func (g *Game) playerTurn(b *battle.Battle) {
 	fmt.Println("┌─────────────────────────────────────────────")
 	fmt.Println("■ > 1. ⚔️   Attack")
 	fmt.Println("|─────────────────────────────────────────────")
@@ -246,75 +231,78 @@ func (g *Game) playerTurn(e combat.Base) (int, string) {
 		switch g.scanner.Text() {
 		case "1":
 			att := g.p.Attack()
-			att = g.e.TakeDamage(att)
+			att = b.Enemy.TakeDamage(att)
 
-			if e.Hp-att <= 0 {
-				return WIN, fmt.Sprintf("You've slained them with %.1f damage ⚔️  🩸", att)
+			if b.EnemyAttr.Hp <= 0 {
+				b.Status = battle.WIN
+				b.Log = fmt.Sprintf("You've slained them with %.1f damage ⚔️  🩸", att)
+			} else {
+				b.Status = battle.NEXT
+				b.Log = fmt.Sprintf("You attacked, dealing %.1f damage ⚔️", att)
 			}
-
-			return NEXT, fmt.Sprintf("You attacked, dealing %.1f damage ⚔️", att)
 		case "2":
-			return FLED, "You decided to fight another day 🏃"
+			b.Status = battle.FLED
+			b.Log = "You decided to fight another day 🏃"
+		default:
+			g.dis.Printf(g.dis.Red, "Invalid Input\n")
+			continue
 		}
-
-		g.dis.Printf(g.dis.Red, "Invalid Input\n")
+		return
 	}
 }
 
-func (g *Game) enemyTurn(e combat.Base) (int, string) {
+func (g *Game) enemyTurn(b *battle.Battle) {
 	g.dis.Center(nil, "■ > Enemy's turn 🔶. Press enter to proceed")
 	g.scanner.Scan()
 
-	att := g.e.Attack()
+	att := b.Enemy.Attack()
 	att = g.p.TakeDamage(att)
 
 	if g.p.Hp <= 0 {
-		return LOSE, fmt.Sprintf("You've been slained with %.1f damage ⚔️  🩸", att)
+		b.Status = battle.LOSE
+		b.Log = fmt.Sprintf("You've been slained with %.1f damage ⚔️  🩸", att)
+	} else {
+		b.Status = battle.NEXT
+		b.Log = fmt.Sprintf("%s  attacked, dealing %.1f damage", b.EnemyAttr.Name, att)
 	}
-
-	return NEXT, fmt.Sprintf("The %s  attacked, dealing %.1f damage", e.Name, att)
 }
 
-func (g *Game) battleConclusion(res, turn int, e combat.Base) {
+func (g *Game) battleConclusion(b *battle.Battle) {
 	g.dis.Printf(g.dis.White, "══════════════════════════════════════════════════")
 	g.dis.Center(g.dis.White, "Battle is Over")
 	g.dis.Printf(g.dis.White, "══════════════════════════════════════════════════\n")
 
-	switch res {
-	case WIN:
-		loot := g.e.DropLoot()
+	switch b.Status {
+	case battle.WIN:
+		loot := b.Enemy.DropLoot()
 		loot = g.p.AddMoney(loot)
 
 		g.dis.Printf(g.dis.Green, "You have won the battle 🏆\n")
 		g.dis.Printf(g.dis.Green, "Loot: ")
 		fmt.Printf("%.1f 💰\n", loot)
 		g.dis.Printf(g.dis.White, "Enemy: ")
-		fmt.Printf("%s\n", e.Name)
+		fmt.Printf("%s\n", b.EnemyAttr.Name)
 		g.dis.Printf(g.dis.White, "Total turns: ")
-		fmt.Printf("%d\n", turn)
-		g.dis.Center(nil, "■ > Press enter to go back to menu")
+		fmt.Printf("%d\n", b.Turn)
 
-		g.e = nil
+		g.dis.Center(nil, "■ > Press enter to go back to menu")
 		g.scanner.Scan()
-	case LOSE:
+	case battle.LOSE:
 		g.dis.Printf(g.dis.Red, "You have died ☠️\n")
 		g.dis.Printf(g.dis.White, "Enemy: ")
-		fmt.Printf("%s\n", e.Name)
+		fmt.Printf("%s\n", b.EnemyAttr.Name)
 		g.dis.Printf(g.dis.White, "Total turns: ")
-		fmt.Printf("%d\n", turn)
+		fmt.Printf("%d\n", b.Turn)
 		g.dis.Center(nil, "■ > Thanks for playing!")
-
-		g.scanner.Scan()
 		os.Exit(1)
-	case FLED:
+	case battle.FLED:
 		g.dis.Printf(g.dis.Green, "You have fled from the battle 🏃\n")
 		g.dis.Printf(g.dis.White, "Enemy: ")
-		fmt.Printf("%s\n", e.Name)
+		fmt.Printf("%s\n", b.EnemyAttr.Name)
 		g.dis.Printf(g.dis.White, "Total turns: ")
-		fmt.Printf("%d\n", turn)
+		fmt.Printf("%d\n", b.Turn)
 		g.dis.Center(nil, "■ > Press enter to go back to menu")
 
-		g.e = nil
 		g.scanner.Scan()
 	}
 }

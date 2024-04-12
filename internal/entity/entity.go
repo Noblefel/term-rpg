@@ -1,10 +1,10 @@
-package combat
+package entity
 
 import (
 	"math/rand"
 )
 
-type Combatant interface {
+type Entity interface {
 	// Attack sums the attack with random value. In tests, replaced random value with 10.
 	Attack() float32
 	// TakeDamage reduces dmg with the defense and decrements the hp
@@ -13,7 +13,7 @@ type Combatant interface {
 	// As of now, it will only drop money.
 	DropLoot() float32
 
-	Attr() Base
+	Attr() *Base
 }
 
 type Base struct {
@@ -26,8 +26,6 @@ type Base struct {
 	DropRate  float32
 	isTesting bool
 }
-
-func (b Base) Attr() Base { return b }
 
 func (b *Base) Attack() float32 {
 	dmg := b.Att
@@ -75,3 +73,5 @@ func (b *Base) DropLoot() float32 {
 
 	return loot
 }
+
+func (b *Base) Attr() *Base { return b }

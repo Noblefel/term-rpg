@@ -1,4 +1,4 @@
-package combat
+package entity
 
 import (
 	"reflect"
@@ -8,8 +8,8 @@ import (
 func TestNew(t *testing.T) {
 	tests := []struct {
 		name         string
-		fn           func() Combatant
-		expectedType Combatant
+		fn           func() Entity
+		expectedType Entity
 	}{
 		{"new thug", newThug, &thug{}},
 		{"new acolyte", newAcolyte, &acolyte{}},

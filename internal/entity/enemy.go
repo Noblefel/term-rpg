@@ -1,8 +1,8 @@
-package combat
+package entity
 
 import "math/rand"
 
-func SpawnRandom() Combatant {
+func SpawnRandom() Entity {
 	switch rand.Intn(4) {
 	case 0:
 		return newThug()
@@ -19,7 +19,7 @@ func SpawnRandom() Combatant {
 
 type thug struct{ Base }
 
-func newThug() Combatant {
+func newThug() Entity {
 	return &thug{Base{
 		Name:     "Thug 🥊",
 		Hp:       80,
@@ -33,7 +33,7 @@ func newThug() Combatant {
 
 type acolyte struct{ Base }
 
-func newAcolyte() Combatant {
+func newAcolyte() Entity {
 	return &acolyte{Base{
 		Name:     "Acolyte 🧙",
 		Hp:       70,
@@ -47,7 +47,7 @@ func newAcolyte() Combatant {
 
 type assasin struct{ Base }
 
-func newAssasin() Combatant {
+func newAssasin() Entity {
 	return &assasin{Base{
 		Name:     "Assassin 🗡️",
 		Hp:       60,
@@ -60,7 +60,7 @@ func newAssasin() Combatant {
 
 type snakes struct{ Base }
 
-func newSnakes() Combatant {
+func newSnakes() Entity {
 	return &snakes{Base{
 		Name:     "Snakes 🐍",
 		Hp:       30,

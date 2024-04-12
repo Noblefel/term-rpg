@@ -1,8 +1,6 @@
 A simple terminal-based RPG where you can battle against various enemies.
 
-<br>
 <img src="https://github.com/Noblefel/term-rpg/blob/main/sample.PNG">
-<br>
 
 # How to play
 
@@ -10,6 +8,11 @@ A simple terminal-based RPG where you can battle against various enemies.
 ```bash
 git clone https://github.com/Noblefel/term-rpg
 ``` 
+
+#### install dependencies 
+```sh
+go mod tidy
+```
 
 #### run the app 
 ```sh
