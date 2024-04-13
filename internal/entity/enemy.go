@@ -12,6 +12,8 @@ func SpawnRandom() Entity {
 		return newAssasin()
 	case 3:
 		return newSnakes()
+	case 4:
+		return newGolem()
 	}
 
 	return nil
@@ -69,4 +71,25 @@ func newSnakes() Entity {
 		HpCap:    30,
 		DropRate: 0,
 	}}
+}
+
+type golem struct{ Base }
+
+func newGolem() Entity {
+	return &golem{Base{
+		Name:     "Golem 🗿",
+		Hp:       151,
+		Att:      38,
+		Def:      20,
+		HpCap:    151,
+		DropRate: 3.2,
+	}}
+}
+
+func (g *golem) Attack() float32 {
+	if rand.Intn(100) < 30 {
+		return g.Base.Attack()
+	}
+
+	return 0 // assume it missed
 }

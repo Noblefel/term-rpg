@@ -15,6 +15,7 @@ func TestNew(t *testing.T) {
 		{"new acolyte", newAcolyte, &acolyte{}},
 		{"new assasin", newAssasin, &assasin{}},
 		{"new snakes", newSnakes, &snakes{}},
+		{"new golem", newGolem, &golem{}},
 	}
 
 	for _, tt := range tests {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Noblefel/term-rpg/internal/battle"
 	"github.com/Noblefel/term-rpg/internal/display"
@@ -17,12 +18,14 @@ type Game struct {
 	scanner *bufio.Scanner
 	dis     *display.Display
 	p       *entity.Player
+	bgChan  chan func()
 }
 
 func New(scanner *bufio.Scanner, dis *display.Display) *Game {
 	return &Game{
 		scanner: scanner,
 		dis:     dis,
+		bgChan:  make(chan func()),
 	}
 }
 
@@ -31,6 +34,15 @@ func (g *Game) Start() {
 		perk := g.selectPerks()
 		g.p = entity.NewPlayer(perk)
 	}
+
+	defer close(g.bgChan)
+
+	go func() {
+		for {
+			fn := <-g.bgChan
+			go fn()
+		}
+	}()
 
 	for {
 		g.menu()
@@ -86,15 +98,17 @@ func (g *Game) menu() {
 func (g *Game) selectPerks() int {
 	display.Clear()
 	g.dis.Printf(g.dis.Green, "══════════════════════════════════════════════════")
-	g.dis.Center(g.dis.Green, "Select your perk 🔥")
+	g.dis.Center(g.dis.Green, "Select your perk ✨")
 	g.dis.Printf(g.dis.Green, "══════════════════════════════════════════════════\n")
 
 	fmt.Println("┌─────────────────────────────────────────────")
-	fmt.Println("■ > 1. 💰 Greed (Gain 15% more loot)")
+	fmt.Printf("■ > 1. %s\n", entity.Perks[entity.GREED])
 	fmt.Println("|─────────────────────────────────────────────")
-	fmt.Println("■ > 2. 🛡️  Resiliency (+1 Def point and 10% dmg reduction)")
+	fmt.Printf("■ > 2. %s\n", entity.Perks[entity.RESILIENCY])
 	fmt.Println("|─────────────────────────────────────────────")
-	fmt.Println("■ > 3. ⚔️   Havoc (+25% Attack, but -15 HP cap)")
+	fmt.Printf("■ > 3. %s\n", entity.Perks[entity.HAVOC])
+	fmt.Println("|─────────────────────────────────────────────")
+	fmt.Printf("■ > 4. %s\n", entity.Perks[entity.TEMPORAL])
 	fmt.Println("└─────────────────────────────────────────────")
 
 	for {
@@ -103,7 +117,7 @@ func (g *Game) selectPerks() int {
 
 		t := g.scanner.Text()
 		switch t {
-		case "1", "2", "3":
+		case "1", "2", "3", "4":
 			perk, _ := strconv.Atoi(t)
 			return perk
 		}
@@ -219,9 +233,9 @@ func (g *Game) battle() {
 
 func (g *Game) playerTurn(b *battle.Battle) {
 	fmt.Println("┌─────────────────────────────────────────────")
-	fmt.Println("■ > 1. ⚔️   Attack")
-	fmt.Println("|─────────────────────────────────────────────")
-	fmt.Println("■ > 2. 🏃  Flee ")
+	fmt.Println("| ■ > 1. ⚔️   Attack	 ■ > 3. 🔥  Fury")
+	fmt.Println("|")
+	fmt.Println("| ■ > 2. 🛡️  Defend	 ■ > 4. 🏃  Flee")
 	fmt.Println("└─────────────────────────────────────────────")
 
 	for {
@@ -241,6 +255,47 @@ func (g *Game) playerTurn(b *battle.Battle) {
 				b.Log = fmt.Sprintf("You attacked, dealing %.1f damage ⚔️", att)
 			}
 		case "2":
+			if g.p.IsDefending {
+				g.dis.Printf(g.dis.Red, "Action already in effect\n")
+				continue
+			}
+
+			td := 5 * time.Second
+			if g.p.Perk == entity.TEMPORAL {
+				td += 8 * time.Second
+			}
+
+			g.bgChan <- func() {
+				g.p.IsDefending = true
+				time.Sleep(td)
+				g.p.IsDefending = false
+			}
+
+			b.Status = battle.NEXT
+			b.Log = "You defend yourself, boosting dmg reduction 🛡️"
+		case "3":
+			if g.p.Hp <= 10 {
+				g.dis.Printf(g.dis.Red, "Not enough hp to perform this action\n")
+				continue
+			}
+
+			sacrifice := 1 + (g.p.Hp * 0.1) + (rand.Float32() * 4)
+			g.p.Hp -= sacrifice
+
+			td := 5 * time.Second
+			if g.p.Perk == entity.TEMPORAL {
+				td += 8 * time.Second
+			}
+
+			g.bgChan <- func() {
+				g.p.Att += 4
+				time.Sleep(td)
+				g.p.Att -= 4
+			}
+
+			b.Status = battle.NEXT
+			b.Log = fmt.Sprintf("You descent into fury 🔥 (-%.1f hp)", sacrifice)
+		case "4":
 			b.Status = battle.FLED
 			b.Log = "You decided to fight another day 🏃"
 		default:
@@ -255,15 +310,26 @@ func (g *Game) enemyTurn(b *battle.Battle) {
 	g.dis.Center(nil, "■ > Enemy's turn 🔶. Press enter to proceed")
 	g.scanner.Scan()
 
-	att := b.Enemy.Attack()
-	att = g.p.TakeDamage(att)
+	if !b.EnemyAttr.IsDefending && rand.Intn(100) < 10 {
+		g.bgChan <- func() {
+			b.EnemyAttr.IsDefending = true
+			time.Sleep(10 * time.Second)
+			b.EnemyAttr.IsDefending = false
+		}
 
-	if g.p.Hp <= 0 {
-		b.Status = battle.LOSE
-		b.Log = fmt.Sprintf("You've been slained with %.1f damage ⚔️  🩸", att)
-	} else {
 		b.Status = battle.NEXT
-		b.Log = fmt.Sprintf("%s  attacked, dealing %.1f damage", b.EnemyAttr.Name, att)
+		b.Log = fmt.Sprintf("%s  bolster their defense 🛡️", b.EnemyAttr.Name)
+	} else {
+		att := b.Enemy.Attack()
+		att = g.p.TakeDamage(att)
+
+		if g.p.Hp <= 0 {
+			b.Status = battle.LOSE
+			b.Log = fmt.Sprintf("You've been slained with %.1f damage ⚔️  🩸", att)
+		} else {
+			b.Status = battle.NEXT
+			b.Log = fmt.Sprintf("%s attacked, dealing %.1f damage", b.EnemyAttr.Name, att)
+		}
 	}
 }
 

@@ -17,14 +17,16 @@ type Entity interface {
 }
 
 type Base struct {
-	Name      string
-	Hp        float32
-	Att       float32
-	Def       float32
-	HpCap     float32
-	DmgReduc  float32
-	DropRate  float32
-	isTesting bool
+	Name     string
+	Hp       float32
+	Att      float32
+	Def      float32
+	HpCap    float32
+	DmgReduc float32
+	DropRate float32
+
+	IsDefending bool
+	isTesting   bool
 }
 
 func (b *Base) Attack() float32 {
@@ -44,13 +46,15 @@ func (b *Base) Attack() float32 {
 }
 
 func (b *Base) TakeDamage(dmg float32) float32 {
-	dmg -= b.Def
+	dmg -= b.Def + (dmg * b.DmgReduc)
+
+	if b.IsDefending {
+		dmg -= dmg * 0.2
+	}
 
 	if dmg <= 0 {
 		return 0
 	}
-
-	dmg -= dmg * b.DmgReduc
 
 	b.Hp -= dmg
 	return dmg

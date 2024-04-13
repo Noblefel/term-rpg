@@ -9,12 +9,14 @@ const (
 	GREED int = iota + 1
 	RESILIENCY
 	HAVOC
+	TEMPORAL
 )
 
 var Perks = map[int]string{
 	GREED:      "💰 Greed (Gain 15% more loot)",
 	RESILIENCY: "🛡️  Resiliency (+1 Def point and 10% dmg reduction)",
 	HAVOC:      "⚔️   Havoc (+25% Attack, but -15 HP cap)",
+	TEMPORAL:   "⏰  Temporal (+8 seconds to actions bonus modifier)",
 }
 
 type Player struct {
@@ -91,7 +93,7 @@ func (p *Player) Train(n int) string {
 		return fmt.Sprintf("Defense increased by %.1f", n)
 	case 3:
 		p.DmgReduc += 0.01
-		return "Dmg reduction increased by 1%"
+		return "Dmg reduction increased by 1%%"
 	}
 
 	return ""
