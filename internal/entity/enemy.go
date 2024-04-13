@@ -3,7 +3,7 @@ package entity
 import "math/rand"
 
 func SpawnRandom() Entity {
-	switch rand.Intn(4) {
+	switch rand.Intn(5) {
 	case 0:
 		return newThug()
 	case 1:
