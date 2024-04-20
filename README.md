@@ -41,13 +41,13 @@ go run main.go
 | Name | Feat |
 | -------- | ------- |  
 | Acolyte 🧙| Has damage reduction |
-| Assassin 🗡️| Deals high damage |
+| Assassin 🗡️| Good in offense with high attack attribute |
 | Golem 🗿  | High defense. 30% chance of dealing massive damage, otherwise miss |
 | Snakes 🐍 | Though low hp, they could deal high damage. Drops no loot |
 | Thug 🥊 | A good all-rounder with decent attributes |
-| Vampire 🧛 | Recover hp when dealing damage |
-| Wraith 👻 | Absorb fixed number of hp, ignoring any defense |
+| Vampire 🧛 | Recover hp when attacking |
+| Wraith 👻 | Absorb fixed number of hp, ignoring any defense and effects |
 
 ### Other
 - **Rest**: recover (5 + 10% of player's hp cap + 0-8) of hp
-- **Train**: 20% chance to buff random attributes
+- **Train**: 30% chance to buff random attributes
