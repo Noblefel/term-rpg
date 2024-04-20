@@ -47,24 +47,16 @@ func NewPlayer(perk int) *Player {
 }
 
 // Attack would further modify the value from the base Attack
-func (p *Player) Attack() float32 {
-	dmg := p.Base.Attack()
+func (p *Player) Attack(e Entity) (float32, string) {
+	dmg, _ := p.Base.Attack(e)
 
 	if p.Perk == HAVOC {
-		dmg += dmg * 0.25
+		extra := dmg * 0.25
+		dmg += extra
+		e.TakeDamage(extra)
 	}
 
-	return dmg
-}
-
-func (p *Player) RecoverHP(min float32) {
-	health := p.Hp + min
-
-	if health > p.HpCap {
-		health = p.HpCap
-	}
-
-	p.Hp = health
+	return dmg, fmt.Sprintf("Player attacked (%.1f dmg)", dmg)
 }
 
 func (p *Player) AddMoney(n float32) float32 {

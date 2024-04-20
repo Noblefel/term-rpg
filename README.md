@@ -26,7 +26,7 @@ go run main.go
 | -------- | ------- |  
 | ⚔️ Attack | Deals dmg based on attack attribute + random value |
 | 🛡️ Defend | Boost dmg reduction by 20% for 5 seconds (cannot stack) |
-| 🔥 Fury | Sacrifice hp for +4 attack point for 5 seconds (player only) |
+| 🔥 Fury | Sacrifice hp for +5 attack point for 5 seconds (player only) |
 | 🏃 Flee | Escape from the battle (player only) |
 
 ### Player Perks
@@ -42,9 +42,11 @@ go run main.go
 | -------- | ------- |  
 | Acolyte 🧙| Has damage reduction |
 | Assassin 🗡️| Deals high damage |
-| Golem 🗿  | High defense. 30% chance of dealing massive damage, otherwise 0 (miss) |
+| Golem 🗿  | High defense. 30% chance of dealing massive damage, otherwise miss |
 | Snakes 🐍 | Though low hp, they could deal high damage. Drops no loot |
 | Thug 🥊 | A good all-rounder with decent attributes |
+| Vampire 🧛 | Recover hp when dealing damage |
+| Wraith 👻 | Absorb fixed number of hp, ignoring any defense |
 
 ### Other
 - **Rest**: recover (5 + 10% of player's hp cap + 0-8) of hp

@@ -30,11 +30,8 @@ func New(scanner *bufio.Scanner, dis *display.Display) *Game {
 }
 
 func (g *Game) Start() {
-	if g.p == nil {
-		perk := g.selectPerks()
-		g.p = entity.NewPlayer(perk)
-	}
-
+	perk := g.selectPerks()
+	g.p = entity.NewPlayer(perk)
 	defer close(g.bgChan)
 
 	go func() {
@@ -148,7 +145,7 @@ func (g *Game) attributes() {
 func (g *Game) rest() {
 	display.Clear()
 
-	if g.p.Money > 5 {
+	if g.p.Money >= 5 {
 		g.p.Money -= 5
 		n := 5 + (g.p.HpCap * 0.1) + rand.Float32()*8
 		g.p.RecoverHP(n)
@@ -177,7 +174,7 @@ func (g *Game) train() {
 	}
 
 	g.p.Money -= 10
-	if rand.Intn(100) < 20 {
+	if rand.Intn(100) < 30 {
 		g.dis.Center(g.dis.Green, "Hard work pays off 💪\n")
 		fmt.Println("──────────────────────────────────────────────")
 		g.dis.Center(g.dis.White, g.p.Train(rand.Intn(4)))
@@ -211,7 +208,7 @@ func (g *Game) battle() {
 		fmt.Printf("(You) \n\n")
 		g.dis.Bar(b.EnemyAttr.Hp, b.EnemyAttr.HpCap)
 		g.dis.Printf(g.dis.White, "❤️  %.1f ", b.EnemyAttr.Hp)
-		fmt.Printf("(%s ) \n\n", b.EnemyAttr.Name)
+		fmt.Printf("(%s) \n\n", b.EnemyAttr.Name)
 
 		if b.IsEnemyTurn {
 			g.enemyTurn(b)
@@ -244,15 +241,12 @@ func (g *Game) playerTurn(b *battle.Battle) {
 
 		switch g.scanner.Text() {
 		case "1":
-			att := g.p.Attack()
-			att = b.Enemy.TakeDamage(att)
+			_, b.Log = g.p.Attack(b.Enemy)
 
 			if b.EnemyAttr.Hp <= 0 {
 				b.Status = battle.WIN
-				b.Log = fmt.Sprintf("You've slained them with %.1f damage ⚔️  🩸", att)
 			} else {
 				b.Status = battle.NEXT
-				b.Log = fmt.Sprintf("You attacked, dealing %.1f damage ⚔️", att)
 			}
 		case "2":
 			if g.p.IsDefending {
@@ -272,7 +266,7 @@ func (g *Game) playerTurn(b *battle.Battle) {
 			}
 
 			b.Status = battle.NEXT
-			b.Log = "You defend yourself, boosting dmg reduction 🛡️"
+			b.Log = "You boosts defense 🛡️"
 		case "3":
 			if g.p.Hp <= 10 {
 				g.dis.Printf(g.dis.Red, "Not enough hp to perform this action\n")
@@ -288,9 +282,9 @@ func (g *Game) playerTurn(b *battle.Battle) {
 			}
 
 			g.bgChan <- func() {
-				g.p.Att += 4
+				g.p.Att += 5
 				time.Sleep(td)
-				g.p.Att -= 4
+				g.p.Att -= 5
 			}
 
 			b.Status = battle.NEXT
@@ -318,17 +312,14 @@ func (g *Game) enemyTurn(b *battle.Battle) {
 		}
 
 		b.Status = battle.NEXT
-		b.Log = fmt.Sprintf("%s  bolster their defense 🛡️", b.EnemyAttr.Name)
+		b.Log = fmt.Sprintf("%s boosts their defense 🛡️", b.EnemyAttr.Name)
 	} else {
-		att := b.Enemy.Attack()
-		att = g.p.TakeDamage(att)
+		_, b.Log = b.Enemy.Attack(g.p)
 
 		if g.p.Hp <= 0 {
 			b.Status = battle.LOSE
-			b.Log = fmt.Sprintf("You've been slained with %.1f damage ⚔️  🩸", att)
 		} else {
 			b.Status = battle.NEXT
-			b.Log = fmt.Sprintf("%s attacked, dealing %.1f damage", b.EnemyAttr.Name, att)
 		}
 	}
 }

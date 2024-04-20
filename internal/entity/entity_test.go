@@ -16,7 +16,7 @@ func TestAttack(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := Base{Att: tt.att, isTesting: true}
-			got := b.Attack()
+			got, _ := b.Attack(&Base{})
 
 			if tt.want != got {
 				t.Errorf("want %.1f, got %.1f", tt.want, got)
@@ -26,7 +26,7 @@ func TestAttack(t *testing.T) {
 
 	t.Run("with random sum", func(t *testing.T) {
 		b := Base{Att: 5}
-		got := b.Attack()
+		got, _ := b.Attack(&Base{})
 
 		if b.Att > got {
 			t.Errorf("want greater than 5, got %.1f", got)
@@ -93,4 +93,29 @@ func TestDropLoot(t *testing.T) {
 			t.Errorf("want 0, got %.1f", got)
 		}
 	})
+}
+
+func TestRecoverHP(t *testing.T) {
+	tests := []struct {
+		name    string
+		recover float32
+		hpCap   float32
+		want    float32
+	}{
+		{"Recover normally", 50.0, 50.0, 50.0},
+		{"Recover normally 2", 20.0, 125.0, 20.0},
+		{"Recover exceeds cap", 200.0, 100.0, 100.0},
+		{"Recover exceeds cap", 1.1, 1.0, 1.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := Base{HpCap: tt.hpCap}
+			b.RecoverHP(tt.recover)
+
+			if b.Hp != tt.want {
+				t.Errorf("want %.1f, got %.1f", tt.want, b.Hp)
+			}
+		})
+	}
 }

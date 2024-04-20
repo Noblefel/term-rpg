@@ -1,17 +1,19 @@
 package entity
 
 import (
+	"fmt"
 	"math/rand"
 )
 
 type Entity interface {
 	// Attack sums the attack with random value. In tests, replaced random value with 10.
-	Attack() float32
+	Attack(e Entity) (float32, string)
 	// TakeDamage reduces dmg with the defense and decrements the hp
 	TakeDamage(dmg float32) float32
 	// DropLoot multiplies random value with drop rate. In tests, replaced random value with 10.
-	// As of now, it will only drop money.
 	DropLoot() float32
+	// RecoverHP adds hp to the entity, cannot exceeds hp cap
+	RecoverHP(n float32)
 
 	Attr() *Base
 }
@@ -29,7 +31,7 @@ type Base struct {
 	isTesting   bool
 }
 
-func (b *Base) Attack() float32 {
+func (b *Base) Attack(e Entity) (float32, string) {
 	dmg := b.Att
 
 	if b.isTesting {
@@ -38,11 +40,9 @@ func (b *Base) Attack() float32 {
 		dmg += rand.Float32() * 10
 	}
 
-	if dmg <= 0 {
-		return 0
-	}
+	dmg = e.TakeDamage(dmg)
 
-	return dmg
+	return dmg, fmt.Sprintf("%s attacked (%.1f dmg)", b.Name, dmg)
 }
 
 func (b *Base) TakeDamage(dmg float32) float32 {
@@ -52,7 +52,7 @@ func (b *Base) TakeDamage(dmg float32) float32 {
 		dmg -= dmg * 0.2
 	}
 
-	if dmg <= 0 {
+	if dmg < 0 {
 		return 0
 	}
 
@@ -76,6 +76,16 @@ func (b *Base) DropLoot() float32 {
 	}
 
 	return loot
+}
+
+func (b *Base) RecoverHP(n float32) {
+	hp := b.Hp + n
+
+	if hp > b.HpCap {
+		hp = b.HpCap
+	}
+
+	b.Hp = hp
 }
 
 func (b *Base) Attr() *Base { return b }

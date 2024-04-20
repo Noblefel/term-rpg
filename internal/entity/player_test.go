@@ -50,36 +50,10 @@ func TestPlayerAttack(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			p := Player{Perk: tt.perk}
 			p.isTesting = true
-			got := p.Attack()
+			got, _ := p.Attack(&Base{})
 
 			if got != tt.want {
 				t.Errorf("want %.1f, got %.1f", tt.want, got)
-			}
-		})
-	}
-}
-
-func TestRecoverHP(t *testing.T) {
-	tests := []struct {
-		name    string
-		recover float32
-		hpCap   float32
-		want    float32
-	}{
-		{"Recover normally", 50.0, 50.0, 50.0},
-		{"Recover normally 2", 20.0, 125.0, 20.0},
-		{"Recover exceeds cap", 200.0, 100.0, 100.0},
-		{"Recover exceeds cap", 1.1, 1.0, 1.0},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := Player{}
-			p.HpCap = tt.hpCap
-			p.RecoverHP(tt.recover)
-
-			if p.Hp != tt.want {
-				t.Errorf("want %.1f, got %.1f", tt.want, p.Hp)
 			}
 		})
 	}
