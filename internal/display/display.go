@@ -50,11 +50,14 @@ func (d *Display) Center(f ColorFunc, format string, a ...interface{}) {
 // Bar prints the percentage bar of current hp relative to it's max capacity.
 // Length is 50 blocks.
 func (d *Display) Bar(currHp, maxHp float32) {
-	if currHp <= 0 {
-		currHp = 0 // avoid panic
+	if currHp > maxHp {
+		currHp = maxHp // avoid panic
 	}
 
 	n := currHp / maxHp * 50
+	if n < 0 {
+		n = 0 // avoid panic
+	}
 
 	if n > 35 {
 		d.Printf(d.Green, "%s", strings.Repeat("█", int(n)))

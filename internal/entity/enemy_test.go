@@ -18,6 +18,7 @@ func TestNew(t *testing.T) {
 		{"new golem", newGolem, &golem{}},
 		{"new vampire", newVampire, &vampire{}},
 		{"new wraith", newWraith, &wraith{}},
+		{"new evil genie", newEvilGenie, &evilGenie{}},
 	}
 
 	for _, tt := range tests {
@@ -30,12 +31,17 @@ func TestNew(t *testing.T) {
 }
 
 func TestVampireAttack(t *testing.T) {
-	t.Run("should heal hp", func(t *testing.T) {
+	t.Run("should heal hp and deal extra dmg", func(t *testing.T) {
+		e := Base{Hp: 100}
 		v := vampire{Base{HpCap: 10, isTesting: true}}
-		v.Attack(&Base{})
+		v.Attack(&e)
 
-		if v.Hp != 2.1 {
-			t.Errorf("want recover 2.1 hp, got %.1f", v.Hp)
+		if v.Hp != 3.1 {
+			t.Errorf("want recover 3.1 hp, got %.1f", v.Hp)
+		}
+
+		if e.Hp != 85 {
+			t.Errorf("want enemy hp to be 85, got %.1f", e.Hp)
 		}
 	})
 }

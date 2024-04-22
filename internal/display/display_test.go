@@ -85,6 +85,7 @@ func TestBar(t *testing.T) {
 		{"at 10% hp 2", 2.5, 22.5, "█████"},
 		{"at 0 hp", 0, 100, ""},
 		{"if somehow negative", -5, 100, ""},
+		{"if currHp exceeds maxHp", 100, 80, "██████████████████████████████████████████████████"},
 	}
 
 	for _, tt := range tests {

@@ -34,7 +34,7 @@ go run main.go
 | -------- | ------- |  
 | 💰 Greed | Gain 15% more loot |
 | 🛡️ Resiliency | +1 defense point and 10% dmg reduction |
-| ⚔️ Havoc | +25% Attack, but -15 HP cap|
+| ⚔️ Havoc | +25% attack bonus, but -15 HP cap|
 | ⏰ Temporal | +8 seconds to actions bonus modifier |
 
 ### Enemies
@@ -42,11 +42,12 @@ go run main.go
 | -------- | ------- |  
 | Acolyte 🧙| Has damage reduction |
 | Assassin 🗡️| Good in offense with high attack attribute |
+| Evil Genie 🧞 | Can straight up **curse** (debuffs) your attributes |
 | Golem 🗿  | High defense. 30% chance of dealing massive damage, otherwise miss |
 | Snakes 🐍 | Though low hp, they could deal high damage. Drops no loot |
 | Thug 🥊 | A good all-rounder with decent attributes |
-| Vampire 🧛 | Recover hp when attacking |
-| Wraith 👻 | Absorb fixed number of hp, ignoring any defense and effects |
+| Vampire 🧛 | Heals every attack and drains 5% current hp as extra damage |
+| Wraith 👻 | Absorbs fixed number of hp, ignoring any defense and effects |
 
 ### Other
 - **Rest**: recover (5 + 10% of player's hp cap + 0-8) of hp

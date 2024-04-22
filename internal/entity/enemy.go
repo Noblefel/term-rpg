@@ -13,6 +13,7 @@ var spawners = []func() Entity{
 	newGolem,
 	newVampire,
 	newWraith,
+	newEvilGenie,
 }
 
 func SpawnRandom() Entity {
@@ -100,7 +101,7 @@ func newVampire() Entity {
 	return &vampire{Base{
 		Name:     "Vampire 🧛",
 		Hp:       90,
-		Att:      10,
+		Att:      7,
 		Def:      1,
 		HpCap:    90,
 		DropRate: 3,
@@ -108,12 +109,15 @@ func newVampire() Entity {
 }
 
 func (v *vampire) Attack(e Entity) (float32, string) {
-	dmg, s := v.Base.Attack(e)
+	extra := e.Attr().Hp * 0.05
+	dmg, _ := v.Base.Attack(e)
+	dmg += extra
+	e.TakeDamage(extra)
 
-	ls := 0.1 + dmg*0.2
-	v.RecoverHP(ls)
+	heal := 0.1 + (dmg)*0.2
+	v.RecoverHP(heal)
 
-	return dmg, fmt.Sprintf("%s (+%.1f hp)", s, ls)
+	return dmg, fmt.Sprintf("%s drained %.1f hp and heals by %.1f", v.Name, dmg, heal)
 }
 
 type wraith struct{ Base }
@@ -132,4 +136,42 @@ func newWraith() Entity {
 func (w *wraith) Attack(e Entity) (float32, string) {
 	e.Attr().Hp -= w.Att
 	return w.Att, fmt.Sprintf("%s absorbed %.1f of hp", w.Name, w.Att)
+}
+
+type evilGenie struct{ Base }
+
+func newEvilGenie() Entity {
+	return &evilGenie{Base{
+		Name:     "Evil Genie 🧞",
+		Hp:       75,
+		Att:      6,
+		Def:      3,
+		HpCap:    75,
+		DropRate: 1,
+		DmgReduc: 0.1,
+	}}
+}
+
+func (eg *evilGenie) Attack(e Entity) (float32, string) {
+	if rand.Intn(100) < 18 {
+		switch rand.Intn(4) {
+		case 0:
+			n := 0.1 + rand.Float32()*4
+			e.Attr().HpCap -= n
+			return 0, fmt.Sprintf("%s casted a curse on your hp cap by %.1f", eg.Name, n)
+		case 1:
+			n := 0.1 + rand.Float32()*1.5
+			e.Attr().Att -= n
+			return 0, fmt.Sprintf("%s casted a curse, weakening your attack by %.1f", eg.Name, n)
+		case 2:
+			n := 0.1 + rand.Float32()*1
+			e.Attr().Def -= n
+			return 0, fmt.Sprintf("%s casted a curse, weakening your defense by %.1f", eg.Name, n)
+		case 3:
+			e.Attr().DmgReduc -= 0.01
+			return 0, eg.Name + " casts a curse on your dmg reduction by 1%%"
+		}
+	}
+
+	return eg.Base.Attack(e)
 }

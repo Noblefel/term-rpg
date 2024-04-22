@@ -31,11 +31,10 @@ func NewPlayer(perk int) *Player {
 	p.Att = 10
 	p.Def = 4
 
-	if perk == HAVOC {
+	switch perk {
+	case HAVOC:
 		p.HpCap = 85
-	}
-
-	if perk == RESILIENCY {
+	case RESILIENCY:
 		p.Def += 1
 		p.DmgReduc += 0.1
 	}
