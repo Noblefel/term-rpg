@@ -14,11 +14,11 @@ type Battle struct {
 	IsEnemyTurn bool
 	Log         string
 	Status      int
-	Enemy       entity.Entity
-	EnemyAttr   *entity.Base
+	Enemy       entity.Enemy
+	EnemyAttr   *entity.EnemyBase
 }
 
-func New(e entity.Entity) *Battle {
+func New(e entity.Enemy) *Battle {
 	return &Battle{
 		Log:       "-- No Recent Log --",
 		Enemy:     e,

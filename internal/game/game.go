@@ -148,7 +148,7 @@ func (g *Game) rest() {
 	if g.p.Money >= 5 {
 		g.p.Money -= 5
 		n := 5 + (g.p.HpCap * 0.1) + rand.Float32()*8
-		g.p.RecoverHP(n)
+		g.p.Heal(n)
 
 		g.dis.Center(g.dis.Green, "You decided to rest 💤\n")
 		fmt.Println("──────────────────────────────────────────────")

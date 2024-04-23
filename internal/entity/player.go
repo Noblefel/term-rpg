@@ -20,9 +20,16 @@ var Perks = map[int]string{
 }
 
 type Player struct {
-	Base
-	Money float32
-	Perk  int
+	Hp       float32
+	Att      float32
+	Def      float32
+	HpCap    float32
+	DmgReduc float32
+	Money    float32
+	Perk     int
+
+	IsDefending bool
+	isTesting   bool
 }
 
 func NewPlayer(perk int) *Player {
@@ -40,22 +47,51 @@ func NewPlayer(perk int) *Player {
 	}
 
 	p.AddMoney(50)
-	p.RecoverHP(100)
+	p.Heal(100)
 
 	return p
 }
 
-// Attack would further modify the value from the base Attack
-func (p *Player) Attack(e Entity) (float32, string) {
-	dmg, _ := p.Base.Attack(e)
+func (p *Player) Attack(e Enemy) (float32, string) {
+	dmg := p.Att
 
-	if p.Perk == HAVOC {
-		extra := dmg * 0.25
-		dmg += extra
-		e.TakeDamage(extra)
+	if p.isTesting {
+		dmg += 10
+	} else {
+		dmg += rand.Float32() * 10
 	}
 
-	return dmg, fmt.Sprintf("Player attacked (%.1f dmg)", dmg)
+	if p.Perk == HAVOC {
+		dmg += dmg * 0.25
+	}
+
+	dmg = e.TakeDamage(p, dmg)
+	return dmg, fmt.Sprintf("You attacked (%.1f dmg)", dmg)
+}
+
+func (p *Player) TakeDamage(dmg float32) float32 {
+	dmg -= p.Def + (dmg * p.DmgReduc)
+
+	if p.IsDefending {
+		dmg -= dmg * 0.2
+	}
+
+	if dmg < 0 {
+		return 0
+	}
+
+	p.Hp -= dmg
+	return dmg
+}
+
+func (p *Player) Heal(n float32) {
+	hp := p.Hp + n
+
+	if hp > p.HpCap {
+		hp = p.HpCap
+	}
+
+	p.Hp = hp
 }
 
 func (p *Player) AddMoney(n float32) float32 {
@@ -67,7 +103,6 @@ func (p *Player) AddMoney(n float32) float32 {
 	return n
 }
 
-// Train buffs player's attribute with random value
 func (p *Player) Train(n int) string {
 	switch n {
 	case 0:
@@ -82,10 +117,8 @@ func (p *Player) Train(n int) string {
 		n := 0.5 + rand.Float32()*2
 		p.Def += n
 		return fmt.Sprintf("Defense increased by %.1f", n)
-	case 3:
+	default:
 		p.DmgReduc += 0.01
 		return "Dmg reduction increased by 1%%"
 	}
-
-	return ""
 }
