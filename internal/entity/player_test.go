@@ -34,95 +34,118 @@ func TestNewPlayer(t *testing.T) {
 			t.Errorf("want %.1f dmg reduc, got %.1f", want, p.DmgReduc)
 		}
 	})
-}
 
-func TestPlayerAttack(t *testing.T) {
-	tests := []struct {
-		name string
-		att  float32
-		perk int
-		want float32
-	}{
-		{"with 5 attck stat", 5, 0, 15},
-		{"with 0 attack stat", 0, 0, 10},
-		{"with negative attack stat", -50, 0, 0},
-		{"with HAVOC", 0, HAVOC, 12.5},
-		{"without HAVOC", 0, -1, 10},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			p := Player{Perk: tt.perk, Att: tt.att}
-			p.isTesting = true
-			got, _ := p.Attack(&EnemyBase{})
-
-			if got != tt.want {
-				t.Errorf("want %.1f, got %.1f", tt.want, got)
-			}
-		})
-	}
-
-	t.Run("with random sum", func(t *testing.T) {
-		b := Player{Att: 5}
-		got, _ := b.Attack(&EnemyBase{})
-
-		if b.Att > got {
-			t.Errorf("want greater than 5, got %.1f", got)
+	t.Run("if perk is TEMPORAL", func(t *testing.T) {
+		p := NewPlayer(TEMPORAL)
+		if p.ExtraTurnEffect == 0 {
+			t.Errorf("want an extra turn effect, got %d", p.ExtraTurnEffect)
 		}
 	})
 }
 
-func TestPlayerTakeDamage(t *testing.T) {
-	tests := []struct {
-		name        string
-		def         float32
-		dmg         float32
-		dmgReduc    float32
-		expectedHp  float32
-		isDefending bool
-	}{
-		{"10 damage with 4 def", 4, 10, 0, 94, false},
-		{"10 damage with 100 def", 100, 10, 0, 100, false},
-		{"50 damage with 25 def", 25, 50, 0, 75, false},
-		{"8.8 damage with 1.3 def", 1.3, 8.8, 0, 92.5, false},
-		{"30 damage with 30% dmg reduction", 0, 30, 0.3, 79, false},
-		{"10 damage while defending", 0, 10, 0, 92, true},
-	}
+func TestPlayerTakeAction(t *testing.T) {
+	t.Run("guard", func(t *testing.T) {
+		var p Player
+		if _, ok := p.TakeAction(nil, 2); !ok {
+			t.Errorf("should return success")
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := Player{Hp: 100, Def: tt.def, DmgReduc: tt.dmgReduc, IsDefending: tt.isDefending}
-			b.TakeDamage(tt.dmg)
+		if p.GuardTurns != 2 {
+			t.Errorf("incorrect effect duration, want %d, got %d", 2, p.GuardTurns)
+		}
+	})
 
-			if b.Hp != tt.expectedHp {
-				t.Errorf("expected %.1f hp, got %.1f", tt.expectedHp, b.Hp)
-			}
-		})
-	}
+	t.Run("cannot stack guard", func(t *testing.T) {
+		var p Player
+		p.GuardTurns = 1
+		if _, ok := p.TakeAction(nil, 2); ok {
+			t.Errorf("should not return success")
+		}
+	})
+
+	t.Run("attack", func(t *testing.T) {
+		var p Player
+		var e EnemyBase
+		e.Hp = 100
+		p.isTesting = true
+
+		if _, ok := p.TakeAction(&e, 1); !ok {
+			t.Errorf("should return success")
+		}
+
+		if e.Hp != 90.0 {
+			t.Errorf("incorrect dmg taken, want hp to be %.1f, got %.1f", 90.0, e.Hp)
+		}
+	})
+
+	t.Run("fury", func(t *testing.T) {
+		var p Player
+		p.Hp = 100
+		p.FuryTurns = -10
+
+		if _, ok := p.TakeAction(nil, 3); !ok {
+			t.Errorf("should return success")
+		}
+
+		if p.FuryTurns != 2 {
+			t.Errorf("incorrect effect duration, want %d, got %d", 2, p.FuryTurns)
+		}
+
+		if p.Hp == 100 {
+			t.Errorf("did not affect player's hp")
+		}
+	})
+
+	t.Run("can stack fury", func(t *testing.T) {
+		var p Player
+		p.Hp = 100
+		p.TakeAction(nil, 3)
+
+		if _, ok := p.TakeAction(nil, 3); !ok {
+			t.Errorf("should return success")
+		}
+
+		if p.FuryTurns != 4 {
+			t.Errorf("incorrect effect duration, want %d, got %d", 4, p.FuryTurns)
+		}
+	})
+
+	t.Run("cannot fury below 10 hp", func(t *testing.T) {
+		var p Player
+		p.Hp = 1
+
+		if _, ok := p.TakeAction(nil, 3); ok {
+			t.Errorf("should not return success")
+		}
+	})
+
+	t.Run("flee", func(t *testing.T) {
+		var p Player
+		if _, ok := p.TakeAction(nil, 4); !ok {
+			t.Errorf("should return success")
+		}
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		var p Player
+		if _, ok := p.TakeAction(nil, -1); ok {
+			t.Errorf("should not return success")
+		}
+	})
 }
 
-func TestPlayerHeal(t *testing.T) {
-	tests := []struct {
-		name    string
-		recover float32
-		hpCap   float32
-		want    float32
-	}{
-		{"Recover normally", 50.0, 50.0, 50.0},
-		{"Recover normally 2", 20.0, 125.0, 20.0},
-		{"Recover exceeds cap", 200.0, 100.0, 100.0},
-		{"Recover exceeds cap", 1.1, 1.0, 1.0},
-	}
+func TestPlayerAttack(t *testing.T) {
+	var p Player
+	p.isTesting = true
+	p.Perk = HAVOC
+	p.FuryTurns = 1
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := Player{HpCap: tt.hpCap}
-			b.Heal(tt.recover)
-
-			if b.Hp != tt.want {
-				t.Errorf("want %.1f, got %.1f", tt.want, b.Hp)
-			}
-		})
+	var e EnemyBase
+	got, _ := p.Attack(&e)
+	want := float32(10 + 5)
+	want += want * 0.25
+	if want != got {
+		t.Errorf("want %.1f dmg, got %.1f dmg", want, got)
 	}
 }
 
@@ -158,7 +181,7 @@ func TestTrain(t *testing.T) {
 		}
 	})
 
-	t.Run("buff att", func(t *testing.T) {
+	t.Run("buff attack", func(t *testing.T) {
 		p := Player{}
 		p.Train(1)
 
@@ -167,7 +190,7 @@ func TestTrain(t *testing.T) {
 		}
 	})
 
-	t.Run("buff def", func(t *testing.T) {
+	t.Run("buff defense", func(t *testing.T) {
 		p := Player{}
 		p.Train(2)
 

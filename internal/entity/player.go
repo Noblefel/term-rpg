@@ -16,20 +16,17 @@ var Perks = map[int]string{
 	GREED:      "💰 Greed (Gain 15% more loot)",
 	RESILIENCY: "🛡️  Resiliency (+1 Def point and 10% dmg reduction)",
 	HAVOC:      "⚔️   Havoc (+25% Attack, but -15 HP cap)",
-	TEMPORAL:   "⏰  Temporal (+8 seconds to actions bonus modifier)",
+	TEMPORAL:   "⌛ Temporal (+1 extra turn for bonus effects)",
 }
 
 type Player struct {
-	Hp       float32
-	Att      float32
-	Def      float32
-	HpCap    float32
-	DmgReduc float32
-	Money    float32
-	Perk     int
+	base
 
-	IsDefending bool
-	isTesting   bool
+	FuryTurns       int
+	Perk            int
+	Money           float32
+	HasFled         bool
+	ExtraTurnEffect int
 }
 
 func NewPlayer(perk int) *Player {
@@ -42,8 +39,10 @@ func NewPlayer(perk int) *Player {
 	case HAVOC:
 		p.HpCap = 85
 	case RESILIENCY:
-		p.Def += 1
+		p.Def++
 		p.DmgReduc += 0.1
+	case TEMPORAL:
+		p.ExtraTurnEffect++
 	}
 
 	p.AddMoney(50)
@@ -52,13 +51,52 @@ func NewPlayer(perk int) *Player {
 	return p
 }
 
-func (p *Player) Attack(e Enemy) (float32, string) {
-	dmg := p.Att
+func (p *Player) TakeAction(e Enemy, n int) (log string, ok bool) {
+	defer func() {
+		if ok {
+			p.GuardTurns--
+			p.FuryTurns--
+		}
+	}()
 
-	if p.isTesting {
-		dmg += 10
-	} else {
-		dmg += rand.Float32() * 10
+	switch n {
+	case 1:
+		_, s := p.Attack(e)
+		return s, true
+	case 2:
+		if p.GuardTurns > 0 {
+			return "Action already in effect\n", false
+		}
+
+		p.GuardTurns = 3 + p.ExtraTurnEffect
+		return "You brace yourself 🛡️", true
+	case 3:
+		if p.Hp <= 10 {
+			return "Not enough hp to perform this action\n", false
+		}
+
+		if p.FuryTurns < 0 {
+			p.FuryTurns = 3 + p.ExtraTurnEffect
+		} else {
+			p.FuryTurns += 3 + p.ExtraTurnEffect
+		}
+
+		sacrifice := 1 + (p.Hp * 0.1) + (rand.Float32() * 4)
+		p.Hp -= sacrifice
+		return fmt.Sprintf("You descent into fury 🔥 (-%.1f hp)", sacrifice), true
+	case 4:
+		p.HasFled = true
+		return "You decided to fight another day 🏃", true
+	}
+
+	return "Invalid action\n", false
+}
+
+func (p *Player) Attack(e Enemy) (float32, string) {
+	dmg := p.base.attack()
+
+	if p.FuryTurns > 0 {
+		dmg += 5
 	}
 
 	if p.Perk == HAVOC {
@@ -69,30 +107,9 @@ func (p *Player) Attack(e Enemy) (float32, string) {
 	return dmg, fmt.Sprintf("You attacked (%.1f dmg)", dmg)
 }
 
-func (p *Player) TakeDamage(dmg float32) float32 {
-	dmg -= p.Def + (dmg * p.DmgReduc)
+func (p *Player) TakeDamage(dmg float32) float32 { return p.base.takeDamage(dmg) }
 
-	if p.IsDefending {
-		dmg -= dmg * 0.2
-	}
-
-	if dmg < 0 {
-		return 0
-	}
-
-	p.Hp -= dmg
-	return dmg
-}
-
-func (p *Player) Heal(n float32) {
-	hp := p.Hp + n
-
-	if hp > p.HpCap {
-		hp = p.HpCap
-	}
-
-	p.Hp = hp
-}
+func (p *Player) Heal(n float32) { p.base.heal(n) }
 
 func (p *Player) AddMoney(n float32) float32 {
 	if p.Perk == GREED {

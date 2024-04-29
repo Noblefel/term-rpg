@@ -4,12 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"math/rand"
-	"os"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/Noblefel/term-rpg/internal/battle"
 	"github.com/Noblefel/term-rpg/internal/display"
 	"github.com/Noblefel/term-rpg/internal/entity"
 )
@@ -18,28 +15,20 @@ type Game struct {
 	scanner *bufio.Scanner
 	dis     *display.Display
 	p       *entity.Player
-	bgChan  chan func()
+	stage   int
 }
 
 func New(scanner *bufio.Scanner, dis *display.Display) *Game {
 	return &Game{
 		scanner: scanner,
 		dis:     dis,
-		bgChan:  make(chan func()),
+		stage:   1,
 	}
 }
 
 func (g *Game) Start() {
 	perk := g.selectPerks()
 	g.p = entity.NewPlayer(perk)
-	defer close(g.bgChan)
-
-	go func() {
-		for {
-			fn := <-g.bgChan
-			go fn()
-		}
-	}()
 
 	for {
 		g.menu()
@@ -59,7 +48,9 @@ func (g *Game) menu() {
 	g.dis.Printf(g.dis.Green, " %.1f\n", g.p.Money)
 	g.dis.Printf(g.dis.White, "✨ Perk: ")
 	perk := strings.Split(entity.Perks[g.p.Perk], "(")[0]
-	fmt.Printf("%s\n\n", perk)
+	fmt.Printf("%s\n", perk)
+	g.dis.Printf(g.dis.White, "🌡️  Stage: ")
+	fmt.Printf("%d\n\n", g.stage)
 
 	fmt.Println("┌─────────────────────────────────────────────")
 	fmt.Println("■ > 1. 🗺️   Next Stage")
@@ -185,181 +176,4 @@ func (g *Game) train() {
 
 	g.dis.Center(nil, "■ > Press enter to continue")
 	g.scanner.Scan()
-}
-
-func (g *Game) battle() {
-	display.Clear()
-	b := battle.New(entity.SpawnRandom())
-	g.dis.Printf(g.dis.Red, "══════════════════════════════════════════════════")
-	g.dis.Center(g.dis.White, "You encountered %s", b.EnemyAttr.Name)
-	g.dis.Printf(g.dis.Red, "══════════════════════════════════════════════════\n")
-	g.dis.Center(nil, "■ > Press enter to proceed\n")
-	g.scanner.Scan()
-
-	for {
-		display.Clear()
-		g.dis.Center(g.dis.White, "Battle 🔥")
-		g.dis.Printf(g.dis.White, "══════════════════════════════════════════════════")
-		g.dis.Center(nil, b.Log)
-		fmt.Print("\n")
-
-		g.dis.Bar(g.p.Hp, g.p.HpCap)
-		g.dis.Printf(g.dis.White, "❤️  %.1f ", g.p.Hp)
-		fmt.Printf("(You) \n\n")
-		g.dis.Bar(b.EnemyAttr.Hp, b.EnemyAttr.HpCap)
-		g.dis.Printf(g.dis.White, "❤️  %.1f ", b.EnemyAttr.Hp)
-		fmt.Printf("(%s) \n\n", b.EnemyAttr.Name)
-
-		if b.IsEnemyTurn {
-			g.enemyTurn(b)
-		} else {
-			g.playerTurn(b)
-		}
-
-		b.IsEnemyTurn = !b.IsEnemyTurn
-		b.Turn++
-
-		if b.Status != battle.NEXT {
-			display.Clear()
-			g.dis.Center(nil, b.Log)
-			g.battleConclusion(b)
-			return
-		}
-	}
-}
-
-func (g *Game) playerTurn(b *battle.Battle) {
-	fmt.Println("┌─────────────────────────────────────────────")
-	fmt.Println("| ■ > 1. ⚔️   Attack	 ■ > 3. 🔥  Fury")
-	fmt.Println("|")
-	fmt.Println("| ■ > 2. 🛡️  Defend	 ■ > 4. 🏃  Flee")
-	fmt.Println("└─────────────────────────────────────────────")
-
-	for {
-		g.dis.Printf(g.dis.White, "Input: ")
-		g.scanner.Scan()
-
-		switch g.scanner.Text() {
-		case "1":
-			_, b.Log = g.p.Attack(b.Enemy)
-
-			if b.EnemyAttr.Hp <= 0 {
-				b.Status = battle.WIN
-			} else {
-				b.Status = battle.NEXT
-			}
-		case "2":
-			if g.p.IsDefending {
-				g.dis.Printf(g.dis.Red, "Action already in effect\n")
-				continue
-			}
-
-			td := 5 * time.Second
-			if g.p.Perk == entity.TEMPORAL {
-				td += 8 * time.Second
-			}
-
-			g.bgChan <- func() {
-				g.p.IsDefending = true
-				time.Sleep(td)
-				g.p.IsDefending = false
-			}
-
-			b.Status = battle.NEXT
-			b.Log = "You boosts defense 🛡️"
-		case "3":
-			if g.p.Hp <= 10 {
-				g.dis.Printf(g.dis.Red, "Not enough hp to perform this action\n")
-				continue
-			}
-
-			sacrifice := 1 + (g.p.Hp * 0.1) + (rand.Float32() * 4)
-			g.p.Hp -= sacrifice
-
-			td := 5 * time.Second
-			if g.p.Perk == entity.TEMPORAL {
-				td += 8 * time.Second
-			}
-
-			g.bgChan <- func() {
-				g.p.Att += 5
-				time.Sleep(td)
-				g.p.Att -= 5
-			}
-
-			b.Status = battle.NEXT
-			b.Log = fmt.Sprintf("You descent into fury 🔥 (-%.1f hp)", sacrifice)
-		case "4":
-			b.Status = battle.FLED
-			b.Log = "You decided to fight another day 🏃"
-		default:
-			g.dis.Printf(g.dis.Red, "Invalid Input\n")
-			continue
-		}
-		return
-	}
-}
-
-func (g *Game) enemyTurn(b *battle.Battle) {
-	g.dis.Center(nil, "■ > Enemy's turn 🔶. Press enter to proceed")
-	g.scanner.Scan()
-
-	if !b.EnemyAttr.IsDefending && rand.Intn(100) < 10 {
-		g.bgChan <- func() {
-			b.EnemyAttr.IsDefending = true
-			time.Sleep(10 * time.Second)
-			b.EnemyAttr.IsDefending = false
-		}
-
-		b.Status = battle.NEXT
-		b.Log = fmt.Sprintf("%s boosts their defense 🛡️", b.EnemyAttr.Name)
-	} else {
-		_, b.Log = b.Enemy.Attack(g.p)
-
-		if g.p.Hp <= 0 {
-			b.Status = battle.LOSE
-		} else {
-			b.Status = battle.NEXT
-		}
-	}
-}
-
-func (g *Game) battleConclusion(b *battle.Battle) {
-	g.dis.Printf(g.dis.White, "══════════════════════════════════════════════════")
-	g.dis.Center(g.dis.White, "Battle is Over")
-	g.dis.Printf(g.dis.White, "══════════════════════════════════════════════════\n")
-
-	switch b.Status {
-	case battle.WIN:
-		loot := b.Enemy.DropLoot()
-		loot = g.p.AddMoney(loot)
-
-		g.dis.Printf(g.dis.Green, "You have won the battle 🏆\n")
-		g.dis.Printf(g.dis.Green, "Loot: ")
-		fmt.Printf("%.1f 💰\n", loot)
-		g.dis.Printf(g.dis.White, "Enemy: ")
-		fmt.Printf("%s\n", b.EnemyAttr.Name)
-		g.dis.Printf(g.dis.White, "Total turns: ")
-		fmt.Printf("%d\n", b.Turn)
-
-		g.dis.Center(nil, "■ > Press enter to go back to menu")
-		g.scanner.Scan()
-	case battle.LOSE:
-		g.dis.Printf(g.dis.Red, "You have died ☠️\n")
-		g.dis.Printf(g.dis.White, "Enemy: ")
-		fmt.Printf("%s\n", b.EnemyAttr.Name)
-		g.dis.Printf(g.dis.White, "Total turns: ")
-		fmt.Printf("%d\n", b.Turn)
-		g.dis.Center(nil, "■ > Thanks for playing!")
-		os.Exit(1)
-	case battle.FLED:
-		g.dis.Printf(g.dis.Green, "You have fled from the battle 🏃\n")
-		g.dis.Printf(g.dis.White, "Enemy: ")
-		fmt.Printf("%s\n", b.EnemyAttr.Name)
-		g.dis.Printf(g.dis.White, "Total turns: ")
-		fmt.Printf("%d\n", b.Turn)
-		g.dis.Center(nil, "■ > Press enter to go back to menu")
-
-		g.scanner.Scan()
-	}
 }
