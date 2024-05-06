@@ -22,7 +22,6 @@ var Perks = map[int]string{
 type Player struct {
 	base
 
-	FuryTurns       int
 	Perk            int
 	Money           float32
 	HasFled         bool
@@ -54,8 +53,7 @@ func NewPlayer(perk int) *Player {
 func (p *Player) TakeAction(e Enemy, n int) (log string, ok bool) {
 	defer func() {
 		if ok {
-			p.GuardTurns--
-			p.FuryTurns--
+			p.base.decrementEffects()
 		}
 	}()
 
@@ -68,21 +66,14 @@ func (p *Player) TakeAction(e Enemy, n int) (log string, ok bool) {
 			return "Action already in effect\n", false
 		}
 
-		p.GuardTurns = 3 + p.ExtraTurnEffect
+		p.base.guard(p.ExtraTurnEffect)
 		return "You brace yourself 🛡️", true
 	case 3:
 		if p.Hp <= 10 {
 			return "Not enough hp to perform this action\n", false
 		}
 
-		if p.FuryTurns < 0 {
-			p.FuryTurns = 3 + p.ExtraTurnEffect
-		} else {
-			p.FuryTurns += 3 + p.ExtraTurnEffect
-		}
-
-		sacrifice := 1 + (p.Hp * 0.1) + (rand.Float32() * 4)
-		p.Hp -= sacrifice
+		sacrifice := p.base.fury(p.ExtraTurnEffect)
 		return fmt.Sprintf("You descent into fury 🔥 (-%.1f hp)", sacrifice), true
 	case 4:
 		p.HasFled = true
@@ -103,7 +94,7 @@ func (p *Player) Attack(e Enemy) (float32, string) {
 		dmg += dmg * 0.25
 	}
 
-	dmg = e.TakeDamage(p, dmg)
+	dmg = e.takeDamage(p, dmg)
 	return dmg, fmt.Sprintf("You attacked (%.1f dmg)", dmg)
 }
 

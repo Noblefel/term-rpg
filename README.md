@@ -38,13 +38,15 @@ go run main.go
 | ⌛ Temporal | +1 extra turn for bonus effects |
 
 ### Enemies
-| Name | Feat |
+| Name | Feat/Special |
 | -------- | ------- |  
 | Acolyte 🧙| Has damage reduction |
 | Assassin 🗡️| Good in offense with high attack attribute |
+| Changeling 🌀 | Will mimic player's attributes |
 | Evil Genie 🧞 | Can straight up **curse** (debuffs) your attributes |
-| Golem 🗿  | High defense. 30% chance of dealing massive damage, otherwise miss |
+| Golem 🗿  | High defense, massive damage, but more likely to skip their own turn |
 | Snakes 🐍 | Though low hp, they could deal high damage |
+| Spike Turtle 🐢 | Reflect some of the original damage back to the attacker |
 | Thug 🥊 | A good all-rounder with decent attributes |
 | Vampire 🧛 | Heals every attack and drains 5% current hp as extra damage |
 | Wraith 👻 | Absorbs fixed number of hp, ignoring any defense and effects |

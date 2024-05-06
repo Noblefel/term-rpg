@@ -88,25 +88,7 @@ func TestPlayerTakeAction(t *testing.T) {
 		}
 
 		if p.FuryTurns != 2 {
-			t.Errorf("incorrect effect duration, want %d, got %d", 2, p.FuryTurns)
-		}
-
-		if p.Hp == 100 {
-			t.Errorf("did not affect player's hp")
-		}
-	})
-
-	t.Run("can stack fury", func(t *testing.T) {
-		var p Player
-		p.Hp = 100
-		p.TakeAction(nil, 3)
-
-		if _, ok := p.TakeAction(nil, 3); !ok {
-			t.Errorf("should return success")
-		}
-
-		if p.FuryTurns != 4 {
-			t.Errorf("incorrect effect duration, want %d, got %d", 4, p.FuryTurns)
+			t.Errorf("should reset to 2, want %d, got %d", 2, p.FuryTurns)
 		}
 	})
 

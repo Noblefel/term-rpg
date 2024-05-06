@@ -1,6 +1,8 @@
 package entity
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 type base struct {
 	Hp         float32
@@ -22,11 +24,7 @@ func (b *base) attack() float32 {
 		dmg += rand.Float32() * 10
 	}
 
-	if dmg < 0 {
-		dmg = 0
-	}
-
-	return dmg
+	return max(dmg, 0)
 }
 
 func (b *base) takeDamage(dmg float32) float32 {
@@ -36,25 +34,28 @@ func (b *base) takeDamage(dmg float32) float32 {
 		dmg -= dmg * 0.2
 	}
 
-	if dmg < 0 {
-		return 0
-	}
-
-	if b.Hp-dmg < 0 {
-		b.Hp = 0
-	} else {
-		b.Hp -= dmg
-	}
+	dmg = max(dmg, 0)
+	b.Hp -= min(dmg, b.Hp)
 
 	return dmg
 }
 
 func (b *base) heal(n float32) {
-	hp := b.Hp + n
+	b.Hp = min(b.HpCap, b.Hp+n)
+}
 
-	if hp > b.HpCap {
-		hp = b.HpCap
-	}
+func (b *base) guard(extraTurn int) {
+	b.GuardTurns = 3 + extraTurn
+}
 
-	b.Hp = hp
+func (b *base) fury(extraTurn int) float32 {
+	b.FuryTurns = max(3, b.FuryTurns) + extraTurn
+	sacrifice := 1 + (b.Hp * 0.1) + (rand.Float32() * 4)
+	b.Hp -= sacrifice
+	return sacrifice
+}
+
+func (b *base) decrementEffects() {
+	b.GuardTurns--
+	b.FuryTurns--
 }

@@ -1,3 +1,4 @@
 cover.out
 todo.txt
 *.exe
+/bin

@@ -94,6 +94,9 @@ func (g *Game) battle() {
 		if b.enemyAttr.GuardTurns > 0 {
 			fmt.Print("🛡️")
 		}
+		if b.enemyAttr.FuryTurns > 0 {
+			fmt.Printf("🔥")
+		}
 		fmt.Printf("\n\n")
 
 		g.battleTurn(b)
@@ -111,7 +114,7 @@ func (g *Game) battleTurn(b *battle) {
 		g.dis.Center(nil, "■ > Enemy's turn 🔶. Press enter to proceed")
 		g.scanner.Scan()
 
-		b.log = b.enemy.TakeAction(b.enemy, g.p, rand.Intn(100))
+		b.log = entity.EnemyTakeAction(b.enemy, g.p, rand.Intn(100))
 	} else {
 		fmt.Println("┌─────────────────────────────────────────────")
 		fmt.Println("| ■ > 1. ⚔️   Attack	 ■ > 3. 🔥  Fury")

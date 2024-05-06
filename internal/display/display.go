@@ -54,10 +54,7 @@ func (d *Display) Bar(currHp, maxHp float32) {
 		currHp = maxHp // avoid panic
 	}
 
-	n := currHp / maxHp * 50
-	if n < 0 {
-		n = 0 // avoid panic
-	}
+	n := max(currHp/maxHp*50, 0)
 
 	if n > 35 {
 		d.Printf(d.Green, "%s", strings.Repeat("█", int(n)))

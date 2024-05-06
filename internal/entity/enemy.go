@@ -6,11 +6,15 @@ import (
 )
 
 type Enemy interface {
-	TakeAction(self Enemy, p *Player, n int) string
-	Attack(p *Player) (float32, string)
-	TakeDamage(p *Player, dmg float32) float32
-	Heal(n float32)
 	Attr() EnemyBase
+
+	attack(p *Player) (float32, string)
+	takeDamage(p *Player, dmg float32) float32
+	special(p *Player) string
+	guard()
+	fury()
+	heal(n float32)
+	decrementEffects()
 }
 
 type EnemyBase struct {
@@ -18,37 +22,46 @@ type EnemyBase struct {
 	Name string
 }
 
-func (e *EnemyBase) TakeAction(self Enemy, p *Player, n int) string {
-	defer func() {
-		e.GuardTurns--
-	}()
+func EnemyTakeAction(e Enemy, p *Player, n int) string {
+	defer e.decrementEffects()
+	attr := e.Attr()
 
-	if e.GuardTurns <= 0 && n < 10 {
-		e.GuardTurns = 3
-		return fmt.Sprintf("%s braces themselves 🛡️", e.Name)
+	if s := e.special(p); s != "" {
+		return s
 	}
 
-	_, log := self.Attack(p)
+	if attr.GuardTurns <= 0 && n <= 10 {
+		e.guard()
+		return fmt.Sprintf("%s braces themselves 🛡️", attr.Name)
+	} else if attr.Hp > 10 && n <= 20 {
+		e.fury()
+		return fmt.Sprintf("%s descent into fury 🔥", attr.Name)
+	}
+
+	_, log := e.attack(p)
 	return log
 }
 
-func (e *EnemyBase) Attack(p *Player) (float32, string) {
+func (e EnemyBase) Attr() EnemyBase { return e }
+
+func (e *EnemyBase) attack(p *Player) (float32, string) {
 	dmg := e.base.attack()
 	dmg = p.TakeDamage(dmg)
 	return dmg, fmt.Sprintf("%s attacked (%.1f dmg)", e.Name, dmg)
 }
 
-func (e *EnemyBase) TakeDamage(p *Player, dmg float32) float32 {
+func (e *EnemyBase) takeDamage(p *Player, dmg float32) float32 {
 	return e.base.takeDamage(dmg)
 }
 
-func (e *EnemyBase) Heal(n float32) { e.base.heal(n) }
-
-func (e EnemyBase) Attr() EnemyBase { return e }
+func (e *EnemyBase) special(p *Player) string { return "" }
+func (e *EnemyBase) guard()                   { e.base.guard(0) }
+func (e *EnemyBase) fury()                    { e.base.fury(0) }
 
 var spawners = []func() Enemy{
 	newAcolyte,
 	newAssasin,
+	newChangeling,
 	newEvilGenie,
 	newGolem,
 	newSnakes,
@@ -87,6 +100,35 @@ func newAssasin() Enemy {
 	return &e
 }
 
+type changeling struct {
+	EnemyBase
+	hasCopied bool
+}
+
+func newChangeling() Enemy {
+	var e changeling
+	e.Name = "Changeling 🎭"
+	e.Hp = 50
+	e.Att = 4
+	e.Def = 4
+	e.HpCap = 50
+	return &e
+}
+
+func (c *changeling) special(p *Player) string {
+	if !c.hasCopied {
+		c.HpCap = p.HpCap
+		c.Att = p.Att
+		c.Def = p.Def
+		c.DmgReduc = p.DmgReduc
+		c.heal(p.HpCap)
+		c.hasCopied = true
+		return fmt.Sprintf("%s molds itself to match your strengths", c.Name)
+	}
+
+	return ""
+}
+
 type evilGenie struct{ EnemyBase }
 
 func newEvilGenie() Enemy {
@@ -100,15 +142,15 @@ func newEvilGenie() Enemy {
 	return &e
 }
 
-func (eg *evilGenie) TakeAction(self Enemy, p *Player, n int) string {
-	if n < 18 {
-		return eg.Curse(p, rand.Intn(4))
+func (eg *evilGenie) special(p *Player) string {
+	if rand.Intn(100) < 18 {
+		return eg.curse(p, rand.Intn(4))
 	}
 
-	return eg.EnemyBase.TakeAction(self, p, n)
+	return ""
 }
 
-func (eg *evilGenie) Curse(p *Player, n int) string {
+func (eg *evilGenie) curse(p *Player, n int) string {
 	switch n {
 	case 0:
 		n := 0.1 + rand.Float32()*4
@@ -140,12 +182,12 @@ func newGolem() Enemy {
 	return &e
 }
 
-func (g *golem) Attack(p *Player) (float32, string) {
+func (g *golem) special(p *Player) string {
 	if rand.Intn(100) < 30 {
-		return g.EnemyBase.Attack(p)
+		return "Sluggish nature of the golem made them unable to take action"
 	}
 
-	return 0, fmt.Sprintf("%s attacked but missed", g.Name)
+	return ""
 }
 
 type snakes struct{ EnemyBase }
@@ -172,14 +214,10 @@ func newSpikeTurtle() Enemy {
 	return &e
 }
 
-func (st *spikeTurtle) TakeDamage(p *Player, dmg float32) float32 {
-	reflect := dmg * (0.1 + rand.Float32()*0.2)
+func (st *spikeTurtle) takeDamage(p *Player, dmg float32) float32 {
+	reflect := dmg * (110.1 + rand.Float32()*0.2)
 	p.TakeDamage(reflect)
-	if p.Hp <= 0 {
-		p.Hp = 0.1 // prevent negative hp
-	}
-
-	return st.EnemyBase.TakeDamage(nil, dmg)
+	return st.EnemyBase.takeDamage(nil, dmg)
 }
 
 type thug struct{ EnemyBase }
@@ -207,13 +245,13 @@ func newVampire() Enemy {
 	return &e
 }
 
-func (v *vampire) Attack(p *Player) (float32, string) {
+func (v *vampire) attack(p *Player) (float32, string) {
 	drain := p.Hp * 0.05
-	dmg, _ := v.EnemyBase.Attack(p)
+	dmg, _ := v.EnemyBase.attack(p)
 	dmg += p.TakeDamage(drain)
 
 	heal := 0.1 + (dmg)*0.2
-	v.Heal(heal)
+	v.heal(heal)
 
 	return dmg, fmt.Sprintf("%s drained %.1f hp and heals by %.1f", v.Name, dmg, heal)
 }
@@ -230,7 +268,7 @@ func newWraith() Enemy {
 	return &e
 }
 
-func (w *wraith) Attack(p *Player) (float32, string) {
+func (w *wraith) attack(p *Player) (float32, string) {
 	p.Hp -= w.Att
 	return w.Att, fmt.Sprintf("%s absorbed %.1f of hp", w.Name, w.Att)
 }
