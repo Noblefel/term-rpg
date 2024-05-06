@@ -42,7 +42,7 @@ go run main.go
 | -------- | ------- |  
 | Acolyte 🧙| Has damage reduction |
 | Assassin 🗡️| Good in offense with high attack attribute |
-| Changeling 🌀 | Will mimic player's attributes |
+| Changeling 🎭 | Will mimic player's attributes |
 | Evil Genie 🧞 | Can straight up **curse** (debuffs) your attributes |
 | Golem 🗿  | High defense, massive damage, but more likely to skip their own turn |
 | Snakes 🐍 | Though low hp, they could deal high damage |

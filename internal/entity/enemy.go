@@ -215,7 +215,7 @@ func newSpikeTurtle() Enemy {
 }
 
 func (st *spikeTurtle) takeDamage(p *Player, dmg float32) float32 {
-	reflect := dmg * (110.1 + rand.Float32()*0.2)
+	reflect := dmg * (0.1 + rand.Float32()*0.2)
 	p.TakeDamage(reflect)
 	return st.EnemyBase.takeDamage(nil, dmg)
 }
