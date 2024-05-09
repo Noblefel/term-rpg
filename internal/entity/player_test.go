@@ -120,11 +120,10 @@ func TestPlayerAttack(t *testing.T) {
 	var p Player
 	p.isTesting = true
 	p.Perk = HAVOC
-	p.FuryTurns = 1
 
 	var e EnemyBase
 	got, _ := p.Attack(&e)
-	want := float32(10 + 5)
+	want := float32(10)
 	want += want * 0.25
 	if want != got {
 		t.Errorf("want %.1f dmg, got %.1f dmg", want, got)

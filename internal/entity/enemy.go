@@ -33,7 +33,7 @@ func EnemyTakeAction(e Enemy, p *Player, n int) string {
 	if attr.GuardTurns <= 0 && n <= 10 {
 		e.guard()
 		return fmt.Sprintf("%s braces themselves 🛡️", attr.Name)
-	} else if attr.Hp > 10 && n <= 20 {
+	} else if attr.Hp > 10 && (n > 10 && n <= 18) {
 		e.fury()
 		return fmt.Sprintf("%s descent into fury 🔥", attr.Name)
 	}

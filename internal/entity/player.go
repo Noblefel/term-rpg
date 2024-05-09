@@ -86,10 +86,6 @@ func (p *Player) TakeAction(e Enemy, n int) (log string, ok bool) {
 func (p *Player) Attack(e Enemy) (float32, string) {
 	dmg := p.base.attack()
 
-	if p.FuryTurns > 0 {
-		dmg += 5
-	}
-
 	if p.Perk == HAVOC {
 		dmg += dmg * 0.25
 	}

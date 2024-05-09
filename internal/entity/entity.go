@@ -24,6 +24,10 @@ func (b *base) attack() float32 {
 		dmg += rand.Float32() * 10
 	}
 
+	if b.FuryTurns > 0 {
+		dmg += 5
+	}
+
 	return max(dmg, 0)
 }
 

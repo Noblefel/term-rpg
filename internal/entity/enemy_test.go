@@ -18,7 +18,7 @@ func TestEnemyTakeAction(t *testing.T) {
 	t.Run("fury", func(t *testing.T) {
 		var e EnemyBase
 		e.Hp = 100
-		EnemyTakeAction(&e, nil, 20)
+		EnemyTakeAction(&e, nil, 18)
 
 		if e.FuryTurns != 2 {
 			t.Errorf("incorrect effect duration, want %d, got %d", 2, e.FuryTurns)

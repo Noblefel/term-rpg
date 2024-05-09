@@ -4,18 +4,23 @@ import "testing"
 
 func TestBaseAttack(t *testing.T) {
 	tests := []struct {
-		name string
-		att  float32
-		want float32
+		name   string
+		att    float32
+		want   float32
+		isFury bool
 	}{
-		{"with 5 attack stat", 5, 15},
-		{"with 0 attack stat", 0, 10},
-		{"with negative attack stat", -50, 0},
+		{"with 5 attack stat", 5, 15, false},
+		{"with 0 attack stat", 0, 10, false},
+		{"with negative attack stat", -50, 0, false},
+		{"with fury effect", 5, 20, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			b := base{Att: tt.att, isTesting: true}
+			if tt.isFury {
+				b.FuryTurns++
+			}
 			got := b.attack()
 
 			if tt.want != got {

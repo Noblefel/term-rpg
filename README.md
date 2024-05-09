@@ -26,7 +26,7 @@ go run main.go
 | -------- | ------- |  
 | ⚔️ Attack | Deals dmg based on attack attribute + random value |
 | 🛡️ Guard | Boost dmg reduction by 20% for 2 turns |
-| 🔥 Fury | Sacrifice hp for +5 attack point for 2 turns (player only) |
+| 🔥 Fury | Sacrifice hp for +5 attack point for 2 turns |
 | 🏃 Flee | Escape from the battle (player only) |
 
 ### Player Perks
