@@ -2,6 +2,12 @@ A simple turn-based RPG game in terminal.
 
 **Incomplete rework ⚠️**
 
+
+
+https://github.com/user-attachments/assets/47664074-32f2-4881-8013-0d994c44decb
+
+
+
 ```bash
 git clone https://github.com/Noblefel/term-rpg
 ```
