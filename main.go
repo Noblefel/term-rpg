@@ -1,17 +1,19 @@
 package main
 
 import (
-	"bufio"
 	"os"
-
-	"github.com/Noblefel/term-rpg/internal/display"
-	"github.com/Noblefel/term-rpg/internal/game"
 )
 
 func main() {
-	d := display.New(os.Stdout)
-	scanner := bufio.NewScanner(os.Stdin)
+	game := Game{
+		writer: os.Stdout,
+		stage:  1,
+	}
 
-	app := game.New(scanner, d)
-	app.Start()
+	game.printf("\033[H\033[J")
+	game.selectPerks()
+
+	for {
+		game.menu()
+	}
 }
