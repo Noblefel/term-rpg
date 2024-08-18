@@ -11,7 +11,7 @@ go mod tidy
 ```
 
 ```sh
-go run main.go
+go run .
 ```
 
 <!-- ### Actions
