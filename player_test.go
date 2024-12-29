@@ -23,7 +23,7 @@ func TestPlayer_Attack(t *testing.T) {
 	t.Run("with havoc perk", func(t *testing.T) {
 		enemy.hp = 2000
 		player.perk = 1
-		player.strength = 1000
+		player.strength = 1000 //large attack for easier test
 		player.Attack(enemy)
 		dmg := enemy.hpcap - enemy.hp
 
@@ -42,7 +42,7 @@ func TestPlayer_Attack(t *testing.T) {
 		dmg := enemy.hpcap - enemy.hp
 
 		if dmg < 1100 || dmg > 1107 {
-			t.Errorf("damage should be around 1300 (10%% increase), got: %.1f", dmg)
+			t.Errorf("damage should be around 1100 (10%% increase), got: %.1f", dmg)
 		}
 	})
 }
