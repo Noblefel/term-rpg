@@ -6,23 +6,19 @@ import (
 )
 
 type Player struct {
-	hp       float32
-	hpcap    float32
-	strength float32
-	defense  float32
-	gold     int
-	perk     int
+	attributes
+	gold int
+	perk int
 }
 
 func NewPlayer(perk int) *Player {
-	player := Player{
-		hp:       100,
-		hpcap:    100,
-		defense:  1,
-		strength: 20,
-		gold:     50,
-		perk:     perk,
-	}
+	var player Player
+	player.hp = 100
+	player.hpcap = 100
+	player.defense = 1
+	player.strength = 20
+	player.gold = 30
+	player.perk = perk
 
 	if perk == 0 {
 		player.hp += 5
@@ -33,13 +29,13 @@ func NewPlayer(perk int) *Player {
 	if perk == 1 {
 		player.hp -= 25
 		player.hpcap -= 25
-		player.gold -= 40
+		player.gold = 0
 	}
 
 	return &player
 }
 
-func (p *Player) Attack(e Enemy) {
+func (p *Player) attack(enemy entity) {
 	dmg := p.strength + rand.Float32()*5
 
 	if p.perk == 1 {
@@ -53,11 +49,11 @@ func (p *Player) Attack(e Enemy) {
 		dmg += dmg * mul
 	}
 
-	fmt.Fprint(out, "\033[38;5;83m✔\033[0m You attacked!")
-	e.TakeDamage(dmg)
+	fmt.Fprintf(out, success+"You attacked!")
+	enemy.damage(dmg)
 }
 
-func (p *Player) TakeDamage(dmg float32) {
+func (p *Player) damage(dmg float32) {
 	if p.perk == 0 {
 		dmg -= dmg * 0.1
 	}
@@ -69,25 +65,23 @@ func (p *Player) TakeDamage(dmg float32) {
 		dmg -= dmg * mul
 	}
 
-	dmg = max(dmg-p.defense, 1)
-	p.hp = max(p.hp-dmg, 0)
-	fmt.Fprintf(out, " \033[38;5;198m%.1f\033[0m damage\n", dmg)
+	p.attributes.damage(dmg)
 }
 
-func (p *Player) Rest() {
+func (p *Player) rest() {
 	n := 15 + rand.Float32()*15
 	p.hp = min(p.hpcap, n+p.hp)
 	p.gold -= 5
 
-	fmt.Fprint(out, "\033[38;5;83m✔\033[0m ")
+	fmt.Fprint(out, success)
 	fmt.Fprintf(out, "Recovered \033[38;5;83m%.1f\033[0m hp\n", n)
 }
 
-func (p *Player) Train() {
+func (p *Player) train() {
 	p.gold -= 10
 
 	if rand.IntN(10) < 6 {
-		fmt.Fprint(out, "\033[38;5;196m✘\033[0m ")
+		fmt.Fprint(out, fail)
 
 		fails := []string{
 			"You messed up",
@@ -102,7 +96,7 @@ func (p *Player) Train() {
 		return
 	}
 
-	fmt.Fprint(out, "\033[38;5;83m✔\033[0m ")
+	fmt.Fprint(out, success)
 
 	switch rand.IntN(3) {
 	case 0:
@@ -110,35 +104,35 @@ func (p *Player) Train() {
 		p.hpcap += n
 		fmt.Fprintf(out, "HP cap increased by \033[38;5;83m%.1f\033[0m\n", n)
 	case 1:
-		n := 0.5 + rand.Float32()*2
+		n := 0.1 + rand.Float32()*2
 		p.strength += n
 		fmt.Fprintf(out, "Strength increased by \033[38;5;83m%.1f\033[0m\n", n)
 	case 2:
-		n := 0.5 + rand.Float32()*2
+		n := 0.1 + rand.Float32()*2
 		p.defense += n
 		fmt.Fprintf(out, "Defense increased by \033[38;5;83m%.1f\033[0m\n", n)
 	}
 }
 
-func (p *Player) Flee(enemy Enemy) bool {
+func (p *Player) flee(enemy entity) bool {
 	if rand.IntN(10) < 6 {
-		fmt.Fprint(out, "\033[38;5;83m✔\033[0m ")
+		fmt.Fprint(out, success)
 		fmt.Fprintln(out, "You have fled the battle")
 		return true
 	}
 
-	fmt.Fprint(out, "\033[38;5;196m✘\033[0m ")
+	fmt.Fprint(out, fail)
 
 	switch rand.IntN(5) {
 	case 0:
 		fmt.Fprintln(out, "Youre too slow and got caught")
-		enemy.Attack()
+		enemy.attack(p)
 	case 1:
-		fmt.Fprint(out, "You slipped in the mud,")
-		p.TakeDamage(2)
+		fmt.Fprintf(out, "You slipped in the mud,")
+		p.damage(2)
 	case 2:
-		fmt.Fprint(out, "You fell into a ditch,")
-		p.TakeDamage(6)
+		fmt.Fprintf(out, "You fell into a ditch,")
+		p.damage(6)
 	case 3:
 		fmt.Fprintln(out, "You run around in circle")
 	case 4:

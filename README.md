@@ -23,13 +23,17 @@ A simple turn-based RPG game in terminal.
 | Name          | Summary                                                | Special              |
 | ------------- | ------------------------------------------------------ | -------------------- |
 | Knight 🛡️     | decent all-rounder with good defense                   | defense buff         |
-| Wizard 🧙     | easy to take out, but has great rng damage             | various spells, heal |
+| Wizard 🧙     | easy to take out, but has great damage                 | various spells, heal |
 | Changeling 🎭 | will morph itself to be like **you**                   | attribute copy       |
 | Vampire 🧛    | powerful enemy with both good attack and survivability | lifesteal            |
 | Demon 👹      | powerful enemy that cares little about your defense    | ignore defense       |
 
 ### Other
 
+- **Battle**: go to battle, the enemy difficulty is scaled
+- **Deep forest**: explore the deep forest, may get something
+- **Dungeon**: explore the dungeon, TO BE ADDED
+- **Shop**: TO BE ADDED
 - **Rest**: recover your healthpoint
 - **Train**: 40% chance to buff random attributes
 

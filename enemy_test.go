@@ -3,11 +3,11 @@ package main
 import "testing"
 
 func TestEnemy_TakeDamage(t *testing.T) {
-	enemy := NewKnight()
-	before := enemy.Attr().hp
-	enemy.TakeDamage(10)
+	enemy := newKnight()
+	before := enemy.attr().hp
+	enemy.damage(10)
 
-	if enemy.Attr().hp == before {
+	if enemy.attr().hp == before {
 		t.Error("hp should be reduced")
 	}
 }
