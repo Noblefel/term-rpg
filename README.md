@@ -1,5 +1,7 @@
 A simple turn-based RPG game in terminal.
 
+https://github.com/user-attachments/assets/74143399-d9da-4b58-b220-ffb93c6d9c41
+
 ### Actions
 
 | Name      | Effect                                             |
