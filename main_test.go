@@ -5,121 +5,216 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
+	"atomicgo.dev/keyboard"
+	"atomicgo.dev/keyboard/keys"
 	"github.com/Noblefel/vivi"
 )
+
+var replacer = strings.NewReplacer(
+	"\033[38;5;83m", "",
+	"\033[38;5;196m", "",
+	"\033[38;5;198m", "",
+	"\033[38;5;226m", "",
+	"\033[38;5;240m", "",
+	"\033[s", "",
+	"\033[u", "",
+	"\033[K", "",
+	"\033[5D", "",
+	"\033[H", "",
+	"\033[J", "",
+	"\033[0J", "",
+	"\033[1m", "",
+	"\033[0m", "",
+	"\r", "",
+)
+
+func dump(t *testing.T, s string) {
+	t.Helper()
+	tname := strings.Replace(t.Name(), "/", "_", -1)
+	os.WriteFile("./testdump/"+tname, []byte(s), os.ModePerm)
+}
 
 func TestMain(m *testing.M) {
 	vivi.Out = io.Discard
 	os.Exit(m.Run())
 }
 
-// func TestMenuMain(t *testing.T) {
-// 	var sb strings.Builder
-// 	out = &sb
-// 	player = &Player{}
-// 	go menuMain()
-// 	time.Sleep(50 * time.Millisecond)
+func TestMenuPoints(t *testing.T) {
+	var sb strings.Builder
+	out = &sb
+	player = new(Player)
+	player.hpcap = 100
+	player.strength = 9
+	player.defense = 5
+	player.energycap = 10
 
-// 	t.Run("display info correctly", func(t *testing.T) {
-// 		defer sb.Reset()
+	go menuPoints()
+	time.Sleep(50 * time.Millisecond)
 
-// 		hpbar := barhp(36, player.hp, player.hpcap)
-// 		if !strings.Contains(sb.String(), hpbar) {
-// 			t.Error("incorrect hpbar")
-// 		}
+	t.Run("display correctly", func(t *testing.T) {
+		defer sb.Reset()
+		got := replacer.Replace(sb.String())
+		dump(t, got)
 
-// 		if !strings.Contains(sb.String(), "Gold   : 0") {
-// 			t.Error("incorrect gold")
-// 		}
+		if !strings.Contains(got, "10 points left") {
+			t.Error("incorrect points left")
+		}
 
-// 		if !strings.Contains(sb.String(), "Stage  : 1") {
-// 			t.Error("incorrect stage")
-// 		}
-// 	})
+		if !strings.Contains(got, "HP cap     : 100.0") {
+			t.Error("incorrect hp cap")
+		}
 
-// 	t.Run("choosing rest with 0 gold", func(t *testing.T) {
-// 		defer sb.Reset()
-// 		defer keyboard.SimulateKeyPress(keys.Enter)
+		if !strings.Contains(got, "Strength   : 9.0") {
+			t.Error("incorrect strength")
+		}
 
-// 		keyboard.SimulateKeyPress(keys.Down)
-// 		keyboard.SimulateKeyPress(keys.Down)
-// 		keyboard.SimulateKeyPress(keys.Enter)
-// 		time.Sleep(50 * time.Millisecond)
+		if !strings.Contains(got, "Defense    : 5.0") {
+			t.Error("incorrect defense")
+		}
 
-// 		if !strings.Contains(sb.String(), "You don't have enough money to rest") {
-// 			t.Error("should fail when attempting to rest")
-// 		}
-// 	})
+		if !strings.Contains(got, "Energy cap : 10") {
+			t.Error("incorrect energy cap")
+		}
+	})
 
-// 	t.Run("choosing rest with 0 gold", func(t *testing.T) {
-// 		defer sb.Reset()
-// 		defer keyboard.SimulateKeyPress(keys.Enter)
+	t.Run("choosing increase hp", func(t *testing.T) {
+		defer sb.Reset()
 
-// 		keyboard.SimulateKeyPress(keys.Down)
-// 		keyboard.SimulateKeyPress(keys.Down)
-// 		keyboard.SimulateKeyPress(keys.Down)
-// 		keyboard.SimulateKeyPress(keys.Enter)
-// 		time.Sleep(50 * time.Millisecond)
+		player.gold = 0
+		keyboard.SimulateKeyPress(keys.Enter)
+		time.Sleep(40 * time.Millisecond)
 
-// 		if !strings.Contains(sb.String(), "You don't have enough money to train") {
-// 			t.Error("should fail when attempting to train")
-// 		}
-// 	})
-// }
+		got := replacer.Replace(sb.String())
+		dump(t, got)
 
-// func TestMenuAttributes(t *testing.T) {
-// 	var sb strings.Builder
-// 	out = &sb
-// 	player = &Player{hpcap: 999, defense: 120, strength: 570}
-// 	go menuAttributes()
-// 	time.Sleep(50 * time.Millisecond)
+		if !strings.Contains(got, "9 points left") {
+			t.Error("incorrect points left")
+		}
 
-// 	if !strings.Contains(sb.String(), "999") {
-// 		t.Error("should display number of 999 (hp cap)")
-// 	}
+		if !strings.Contains(got, "HP cap     : 103.0") {
+			t.Error("hp cap should increase by 3")
+		}
+	})
 
-// 	if !strings.Contains(sb.String(), "120") {
-// 		t.Error("should display number of 120 (defense)")
-// 	}
+	keyboard.SimulateKeyPress(keys.Up)
+	keyboard.SimulateKeyPress(keys.Enter) //exit
+}
 
-// 	if !strings.Contains(sb.String(), "570") {
-// 		t.Error("should display number of 570 (strength)")
-// 	}
-// }
+func TestMenuMain(t *testing.T) {
+	var sb strings.Builder
+	out = &sb
 
-// func TestMenuBattles(t *testing.T) {
-// 	var sb strings.Builder
-// 	out = &sb
-// 	player = &Player{hpcap: 10, hp: 10}
+	player = new(Player)
+	player.hp = 105
+	player.energy = 13
+	player.gold = 50
 
-// 	t.Run("entering battle with 0 hp", func(t *testing.T) {
-// 		defer sb.Reset()
-// 		defer keyboard.SimulateKeyPress(keys.Enter)
-// 		player.hp = 0
-// 		go menuBattle(nil)
-// 		time.Sleep(50 * time.Millisecond)
+	go menuMain()
+	time.Sleep(50 * time.Millisecond)
 
-// 		if !strings.Contains(sb.String(), "lost") {
-// 			t.Error("should tell that player had lost")
-// 		}
+	t.Run("display info correctly", func(t *testing.T) {
+		defer sb.Reset()
+		got := replacer.Replace(sb.String())
+		dump(t, got)
 
-// 		os.WriteFile("testlog.txt", []byte(sb.String()), os.ModePerm)
-// 	})
+		want := "Health : ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 105.0"
+		if !strings.Contains(got, want) {
+			t.Error("incorrect hp bar")
+		}
 
-// 	t.Run("when enemy has 0 hp left", func(t *testing.T) {
-// 		defer sb.Reset()
-// 		defer keyboard.SimulateKeyPress(keys.Enter)
-// 		player.hp = 10
-// 		enemy := Attributes{hp: 0}
-// 		go menuBattle(&enemy)
-// 		time.Sleep(50 * time.Millisecond)
+		want = "Energy : ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13"
+		if !strings.Contains(got, want) {
+			t.Error("incorrect energy bar")
+		}
 
-// 		if !strings.Contains(sb.String(), "won") {
-// 			t.Error("should tell that player had won")
-// 		}
-// 	})
-// }
+		if !strings.Contains(got, "Gold   : 50") {
+			t.Error("incorrect gold")
+		}
+
+		if !strings.Contains(got, "Stage  : 1") {
+			t.Error("incorrect stage")
+		}
+	})
+
+	t.Run("choosing rest with 0 gold", func(t *testing.T) {
+		defer sb.Reset()
+
+		player.gold = 0
+		keyboard.SimulateKeyPress(keys.Down)
+		keyboard.SimulateKeyPress(keys.Down)
+		keyboard.SimulateKeyPress(keys.Down)
+		keyboard.SimulateKeyPress(keys.Enter)
+		time.Sleep(40 * time.Millisecond)
+
+		got := replacer.Replace(sb.String())
+		keyboard.SimulateKeyPress(keys.Enter) //go back to menu
+		dump(t, got)
+
+		if !strings.Contains(got, "You don't have enough money to rest") {
+			t.Error("should fail when attempting to rest")
+		}
+	})
+
+	t.Run("choosing train with 0 gold", func(t *testing.T) {
+		keyboard.SimulateKeyPress(keys.Up)
+		keyboard.SimulateKeyPress(keys.Up)
+		keyboard.SimulateKeyPress(keys.Enter)
+		time.Sleep(40 * time.Millisecond)
+
+		got := replacer.Replace(sb.String())
+		keyboard.SimulateKeyPress(keys.Enter) //go back to menu
+		dump(t, got)
+
+		if !strings.Contains(got, "You don't have enough money to train") {
+			t.Error("should fail when attempting to train")
+		}
+	})
+
+	keyboard.SimulateKeyPress(keys.Up)
+	keyboard.SimulateKeyPress(keys.Enter) //exit
+}
+
+func TestMenuAttributes(t *testing.T) {
+	var sb strings.Builder
+	out = &sb
+
+	player = new(Player)
+	player.hpcap = 120
+	player.energycap = 5
+	player.strength = 14
+	player.defense = 7.5
+
+	go menuAttributes()
+	time.Sleep(50 * time.Millisecond)
+
+	t.Run("display info correctly", func(t *testing.T) {
+		defer sb.Reset()
+		got := replacer.Replace(sb.String())
+		dump(t, got)
+
+		want := "HP cap    :━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 120.0"
+		if !strings.Contains(got, want) {
+			t.Error("incorrect hp cap")
+		}
+
+		want = "Strength  :━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.0"
+		if !strings.Contains(got, want) {
+			t.Error("incorrect strength")
+		}
+
+		want = "Defense   :━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.5"
+		if !strings.Contains(got, want) {
+			t.Error("incorrect defense")
+		}
+
+		want = "Energy cap:━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5"
+		if !strings.Contains(got, want) {
+			t.Error("incorrect energy cap")
+		}
+	})
+}
 
 func TestBars(t *testing.T) {
 	t.Run("10 length with max value", func(t *testing.T) {

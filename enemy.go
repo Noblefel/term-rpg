@@ -21,10 +21,11 @@ type attributes struct {
 	hpcap    float32
 	strength float32
 	defense  float32
+	effects  map[string]int //name - turn duration
 }
 
 func (attr attributes) attack(target entity) {
-	fmt.Fprintf(out, "%s attacked!", attr.name)
+	fmt.Fprintf(out, "%s%s attacked!", success, attr.name)
 	target.damage(attr.strength)
 }
 
@@ -34,8 +35,14 @@ func (attr *attributes) setHP(hp float32) { attr.hp = hp }
 
 func (attr *attributes) damage(dmg float32) {
 	dmg = max(dmg-attr.defense, 1)
-	attr.hp -= max(dmg, 0)
+	attr.hp = max(attr.hp-dmg, 0)
 	fmt.Fprintf(out, " \033[38;5;198m%.1f\033[0m damage\n", dmg)
+}
+
+func (attr attributes) decrementEffect() {
+	for k := range attr.effects {
+		attr.effects[k]--
+	}
 }
 
 func randomEnemy() entity {
@@ -57,21 +64,24 @@ type knight struct {
 
 func newKnight() entity {
 	attr := attributes{
-		name:     "Knight 🛡️",
+		name:     "Knight",
 		hp:       scale(90, 4),
 		hpcap:    scale(90, 4),
 		defense:  scale(6, 0.4),
 		strength: scale(9, 1),
+		effects:  make(map[string]int),
 	}
 	return &knight{attr}
 }
 
 func (k *knight) attack(target entity) {
 	fmt.Fprint(out, success)
+	roll := roll()
 
-	if rand.IntN(100) < 15 {
+	if roll < 15 {
 		def := rand.Float32() * scale(5, 0.4)
 		k.defense += def
+		k.hp = min(k.hp+5+def, k.hpcap)
 		fmt.Fprintf(out, "The knight reinforced his armor! ")
 		fmt.Fprintf(out, "\033[38;5;83m+%.1f\033[0m defense\n", def)
 		return
@@ -93,35 +103,35 @@ type wizard struct {
 
 func newWizard() entity {
 	attr := attributes{
-		name:     "Wizard 🧙",
+		name:     "Wizard",
 		hp:       scale(55, 1.5),
 		hpcap:    scale(55, 1.5),
 		defense:  scale(2, 0.25),
 		strength: scale(4, 0.65),
+		effects:  make(map[string]int),
 	}
 	return &wizard{attr}
 }
 
 func (w *wizard) attack(target entity) {
 	fmt.Fprint(out, success)
+	roll := roll()
 
-	rng := rand.IntN(100)
-
-	if rng < 20 {
-		fmt.Fprintf(out, "Wizard cannot cast, hit you with his staff instead! ")
+	if roll < 20 {
+		fmt.Fprintf(out, "Wizard cannot cast, hit you with his staff instead!")
 		target.damage(w.strength)
-	} else if rng < 30 {
+	} else if roll < 30 {
 		fmt.Fprintf(out, "Wizard cast \033[38;5;226menhanced\033[0m attack!")
 		target.damage(w.strength * 3)
-	} else if rng < 50 {
+	} else if roll < 50 {
 		fmt.Fprintf(out, "Wizard cast \033[38;5;226mfireball\033[0m!")
 		dmg := rand.Float32() * scale(30, 1.75)
 		target.damage(dmg)
-	} else if rng < 70 {
+	} else if roll < 70 {
 		fmt.Fprintf(out, "Wizard cast \033[38;5;226mlightning\033[0m!")
 		dmg := 10 + rand.Float32()*scale(20, 1)
 		target.damage(dmg)
-	} else if rng < 80 {
+	} else if roll < 80 {
 		fmt.Fprintf(out, "Wizard summons \033[38;5;226mmeteor\033[0m!")
 		target.damage(35)
 	} else {
@@ -139,11 +149,12 @@ type changeling struct {
 
 func newChangeling() entity {
 	attr := attributes{
-		name:     "Changeling 🎭",
+		name:     "Changeling",
 		hp:       80,
 		hpcap:    80,
 		defense:  1,
 		strength: 1,
+		effects:  make(map[string]int),
 	}
 	return &changeling{attr, false}
 }
@@ -171,19 +182,20 @@ type vampire struct {
 
 func newVampire() entity {
 	attr := attributes{
-		name:     "Vampire 🧛",
+		name:     "Vampire",
 		hp:       scale(80, 2.6),
 		hpcap:    scale(80, 2.6),
 		defense:  scale(4, 0.3),
-		strength: scale(10, 2),
+		strength: scale(10, 1.9),
+		effects:  make(map[string]int),
 	}
 	return &vampire{attr}
 }
 
 func (v *vampire) attack(target entity) {
-	rng := rand.IntN(100)
+	roll := roll()
 
-	if rng < 15 {
+	if roll < 15 {
 		fmt.Fprint(out, fail)
 		fmt.Fprintf(out, "Vampire get exposed to sunlight! getting")
 		v.damage(scale(10, 0.9))
@@ -192,12 +204,12 @@ func (v *vampire) attack(target entity) {
 
 	fmt.Fprint(out, success)
 
-	if rng < 70 {
+	if roll < 70 {
 		temp := target.attr().hp
-		fmt.Fprintf(out, "Vampire bites down hard! healing and dealing")
+		fmt.Fprintf(out, "Vampire bites down hard! heal/deal")
 		target.damage(v.strength)
 		v.hp = min(v.hp+temp-target.attr().hp, v.hpcap)
-	} else if rng < 85 {
+	} else if roll < 85 {
 		fmt.Fprintf(out, "Vampire slashed you with claws!")
 		target.damage(v.strength)
 	} else {
@@ -212,11 +224,12 @@ type demon struct {
 
 func newDemon() entity {
 	attr := attributes{
-		name:     "Demon 👹",
+		name:     "Demon",
 		hp:       scale(112, 3),
 		hpcap:    scale(112, 3),
 		defense:  scale(4, 0.5),
-		strength: scale(10, 1.9),
+		strength: scale(10, 1.8),
+		effects:  make(map[string]int),
 	}
 	return &demon{attr}
 }
@@ -224,7 +237,7 @@ func newDemon() entity {
 func (d *demon) attack(target entity) {
 	fmt.Fprint(out, success)
 
-	if rand.IntN(100) < 60 {
+	if roll() < 60 {
 		messages := []string{
 			"Demon drains your life force!",
 			"Demon absors your life force!",
