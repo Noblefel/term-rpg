@@ -73,7 +73,7 @@ func (p *Player) attack(enemy entity) {
 		dmg += dmg * mul
 	}
 
-	fmt.Fprintf(out, success+"You attacked!")
+	fmt.Printf(success + "You attacked!")
 	enemy.damage(dmg)
 }
 
@@ -96,17 +96,17 @@ func (p *Player) skill(i int, enemy entity) bool {
 	skill := skills[i]
 
 	if skill.cost > p.energy {
-		fmt.Fprintln(out, "\033[38;5;196mNot enough energy\033[0m")
+		fmt.Println("\033[38;5;196mNot enough energy\033[0m")
 		return false
 	}
 
 	if p.effects["cd_"+skill.name] > 0 {
-		fmt.Fprintln(out, "\033[38;5;196mSkill in cooldown\033[0m")
+		fmt.Println("\033[38;5;196mSkill in cooldown\033[0m")
 		return false
 	}
 
-	fmt.Fprint(out, success)
-	fmt.Fprintf(out, "You use \033[38;5;226m%s\033[0m: ", skill.name)
+	fmt.Print(success)
+	fmt.Printf("You use \033[38;5;226m%s\033[0m: ", skill.name)
 
 	switch skill.name {
 	case "charge":
@@ -117,18 +117,18 @@ func (p *Player) skill(i int, enemy entity) bool {
 	case "heal":
 		heal := 10 + p.hpcap*0.08
 		p.hp = min(p.hp+heal, p.hpcap)
-		fmt.Fprintf(out, "recover \033[38;5;83m%.1f\033[0m hp\n", heal)
+		fmt.Printf("recover \033[38;5;83m%.1f\033[0m hp\n", heal)
 	case "frenzy":
 		sacrifice := 0.20 * p.hp
 		sacrifice += 0.05 * p.hpcap
 		p.hp = max(p.hp-sacrifice, 0)
-		fmt.Fprintf(out, "\033[38;5;198m-%.1f\033[0m hp and deal", sacrifice)
+		fmt.Printf("\033[38;5;198m-%.1f\033[0m hp and deal", sacrifice)
 		enemy.damage(p.strength * 2.5)
 	case "vision":
-		fmt.Fprintln(out, "you can see they have")
-		fmt.Fprintf(out, "hp cap   : %.1f\n", enemy.attr().hpcap)
-		fmt.Fprintf(out, "strength : %.1f\n", enemy.attr().strength)
-		fmt.Fprintf(out, "defense  : %.1f\n", enemy.attr().defense)
+		fmt.Println("you can see they have")
+		fmt.Printf("hp cap   : %.1f\n", enemy.attr().hpcap)
+		fmt.Printf("strength : %.1f\n", enemy.attr().strength)
+		fmt.Printf("defense  : %.1f\n", enemy.attr().defense)
 	case "drain":
 		drain := enemy.attr().hp * 0.2
 		enemy.damage(drain)
@@ -136,7 +136,7 @@ func (p *Player) skill(i int, enemy entity) bool {
 		absorb := enemy.attr().hpcap * 0.075
 		newhp := max(enemy.attr().hp-absorb, 0)
 		enemy.setHP(newhp)
-		fmt.Fprintf(out, "take \033[38;5;198m%.1f\033[0m enemy hp\n", absorb)
+		fmt.Printf("take \033[38;5;198m%.1f\033[0m enemy hp\n", absorb)
 	case "trick":
 		enemy.attack(enemy)
 	case "poison":
@@ -181,9 +181,9 @@ func (p *Player) rest() {
 	p.energy = min(p.energy+5, p.energycap)
 	p.gold -= 5
 
-	fmt.Fprint(out, success)
-	fmt.Fprintf(out, "Recovered \033[38;5;83m%.1f\033[0m hp", heal)
-	fmt.Fprintf(out, " and \033[38;5;83m5\033[0m energy\n")
+	fmt.Print(success)
+	fmt.Printf("Recovered \033[38;5;83m%.1f\033[0m hp", heal)
+	fmt.Printf(" and \033[38;5;83m5\033[0m energy\n")
 }
 
 func (p *Player) train() {
@@ -191,7 +191,7 @@ func (p *Player) train() {
 	roll := roll()
 
 	if roll < 60 {
-		fmt.Fprint(out, fail)
+		fmt.Print(fail)
 
 		fails := []string{
 			"You messed up",
@@ -202,27 +202,27 @@ func (p *Player) train() {
 			"You just stare at the wall",
 		}
 
-		fmt.Fprintln(out, fails[rand.IntN(len(fails))])
+		fmt.Println(fails[rand.IntN(len(fails))])
 		return
 	}
 
-	fmt.Fprint(out, success)
+	fmt.Print(success)
 
 	if roll < 71 {
 		n := 1 + rand.Float32()*5
 		p.hpcap += n
-		fmt.Fprintf(out, "HP cap increased by \033[38;5;83m%.1f\033[0m\n", n)
+		fmt.Printf("HP cap increased by \033[38;5;83m%.1f\033[0m\n", n)
 	} else if roll < 82 {
 		n := 0.1 + rand.Float32()*2
 		p.strength += n
-		fmt.Fprintf(out, "Strength increased by \033[38;5;83m%.1f\033[0m\n", n)
+		fmt.Printf("Strength increased by \033[38;5;83m%.1f\033[0m\n", n)
 	} else if roll < 93 {
 		n := 0.1 + rand.Float32()*2
 		p.defense += n
-		fmt.Fprintf(out, "Defense increased by \033[38;5;83m%.1f\033[0m\n", n)
+		fmt.Printf("Defense increased by \033[38;5;83m%.1f\033[0m\n", n)
 	} else {
 		p.energycap++
-		fmt.Fprintln(out, "Energy cap increased by \033[38;5;83m1\033[0m")
+		fmt.Println("Energy cap increased by \033[38;5;83m1\033[0m")
 	}
 }
 
@@ -230,34 +230,39 @@ func (p *Player) flee(enemy entity) {
 	roll := roll()
 
 	if roll < 60 {
-		fmt.Fprint(out, success)
-		fmt.Fprintln(out, "You have fled the battle")
+		fmt.Print(success)
+		fmt.Println("You have fled the battle")
 		p.effects["fled"] = 1
 		return
 	}
 
-	fmt.Fprint(out, fail)
+	fmt.Print(fail)
 
 	if roll < 68 {
-		fmt.Fprintln(out, "Youre too slow and got caught")
+		fmt.Println("Youre too slow and got caught")
 
 		if enemy.attr().effects["stunned"] > 0 {
-			fmt.Fprint(out, fail)
-			fmt.Fprintf(out, "%s tried to attack but is stunned\n", enemy.attr().name)
+			fmt.Print(fail)
+			fmt.Printf("%s tried to attack but is stunned\n", enemy.attr().name)
 		} else {
 			enemy.attack(p)
 		}
 	} else if roll < 76 {
-		fmt.Fprintf(out, "You slipped in the mud,")
+		fmt.Printf("You slipped in the mud,")
 		p.damage(2)
 	} else if roll < 84 {
-		fmt.Fprintf(out, "You fell into a ditch,")
+		fmt.Printf("You fell into a ditch,")
 		p.damage(6)
 	} else if roll < 92 {
 		dmg := p.hp * 0.05
 		p.hp = max(p.hp-dmg, 0)
-		fmt.Fprintf(out, "You walked into a trap, \033[38;5;198m%.1f\033[0m dmg\n", dmg)
+		fmt.Printf("You walked into a trap, \033[38;5;198m%.1f\033[0m dmg\n", dmg)
 	} else {
-		fmt.Fprintln(out, "You run around in circle")
+		fmt.Println("You run around in circle")
 	}
+}
+
+func (p Player) energybar() string {
+	bar := bars(40, float32(p.energy), float32(p.energycap))
+	return fmt.Sprintf("\033[38;5;226m" + bar[0] + "\033[0m" + bar[1])
 }

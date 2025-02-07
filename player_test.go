@@ -1,12 +1,8 @@
 package main
 
 import (
-	"io"
-	"strings"
 	"testing"
 )
-
-func init() { out = io.Discard }
 
 func TestNewPlayer(t *testing.T) {
 	player := NewPlayer(-1)
@@ -232,32 +228,6 @@ func TestPlayer_Skill(t *testing.T) {
 
 		if player.hp != 70 {
 			t.Error("should not be affected by perk modifier", player.hp)
-		}
-	})
-
-	t.Run("vision", func(t *testing.T) {
-		var sb strings.Builder
-		out = &sb
-
-		i := find("vision")
-		attr.hpcap = 99
-		attr.strength = 5.5
-		attr.defense = 1.3
-		player.skill(i, e)
-
-		got := replacer.Replace(sb.String())
-		dump(t, got)
-
-		if !strings.Contains(got, "hp cap   : 99.0") {
-			t.Error("incorrect hp cap")
-		}
-
-		if !strings.Contains(got, "strength : 5.5") {
-			t.Error("incorrect strength")
-		}
-
-		if !strings.Contains(got, "defense  : 1.3") {
-			t.Error("incorrect defense")
 		}
 	})
 

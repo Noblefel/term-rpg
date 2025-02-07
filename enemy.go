@@ -5,46 +5,6 @@ import (
 	"math/rand/v2"
 )
 
-type entity interface {
-	attack(entity)
-	// gets data like HP, strength...
-	attr() attributes
-	// to modify HP immediately
-	setHP(float32)
-	// takes attack dmg and log it. Minimal dmg is 1.
-	damage(float32)
-}
-
-type attributes struct {
-	name     string
-	hp       float32
-	hpcap    float32
-	strength float32
-	defense  float32
-	effects  map[string]int //name - turn duration
-}
-
-func (attr attributes) attack(target entity) {
-	fmt.Fprintf(out, "%s%s attacked!", success, attr.name)
-	target.damage(attr.strength)
-}
-
-func (attr attributes) attr() attributes { return attr }
-
-func (attr *attributes) setHP(hp float32) { attr.hp = hp }
-
-func (attr *attributes) damage(dmg float32) {
-	dmg = max(dmg-attr.defense, 1)
-	attr.hp = max(attr.hp-dmg, 0)
-	fmt.Fprintf(out, " \033[38;5;198m%.1f\033[0m damage\n", dmg)
-}
-
-func (attr attributes) decrementEffect() {
-	for k := range attr.effects {
-		attr.effects[k]--
-	}
-}
-
 func randomEnemy() entity {
 	var enemies = []func() entity{
 		newKnight,
@@ -75,15 +35,15 @@ func newKnight() entity {
 }
 
 func (k *knight) attack(target entity) {
-	fmt.Fprint(out, success)
+	fmt.Print(success)
 	roll := roll()
 
 	if roll < 15 {
 		def := rand.Float32() * scale(5, 0.4)
 		k.defense += def
 		k.hp = min(k.hp+5+def, k.hpcap)
-		fmt.Fprintf(out, "The knight reinforced his armor! ")
-		fmt.Fprintf(out, "\033[38;5;83m+%.1f\033[0m defense\n", def)
+		fmt.Printf("The knight reinforced his armor! ")
+		fmt.Printf("\033[38;5;83m+%.1f\033[0m defense\n", def)
 		return
 	}
 
@@ -93,7 +53,7 @@ func (k *knight) attack(target entity) {
 		"The knight slashes you with his sword!",
 		"The knight smashed you with his shield!",
 	}
-	fmt.Fprintf(out, messages[rand.IntN(len(messages))])
+	fmt.Printf(messages[rand.IntN(len(messages))])
 	target.damage(k.strength)
 }
 
@@ -114,31 +74,31 @@ func newWizard() entity {
 }
 
 func (w *wizard) attack(target entity) {
-	fmt.Fprint(out, success)
+	fmt.Print(success)
 	roll := roll()
 
 	if roll < 20 {
-		fmt.Fprintf(out, "Wizard cannot cast, hit you with his staff instead!")
+		fmt.Printf("Wizard cannot cast, hit you with his staff instead!")
 		target.damage(w.strength)
 	} else if roll < 30 {
-		fmt.Fprintf(out, "Wizard cast \033[38;5;226menhanced\033[0m attack!")
+		fmt.Printf("Wizard cast \033[38;5;226menhanced\033[0m attack!")
 		target.damage(w.strength * 3)
 	} else if roll < 50 {
-		fmt.Fprintf(out, "Wizard cast \033[38;5;226mfireball\033[0m!")
+		fmt.Printf("Wizard cast \033[38;5;226mfireball\033[0m!")
 		dmg := rand.Float32() * scale(30, 1.75)
 		target.damage(dmg)
 	} else if roll < 70 {
-		fmt.Fprintf(out, "Wizard cast \033[38;5;226mlightning\033[0m!")
+		fmt.Printf("Wizard cast \033[38;5;226mlightning\033[0m!")
 		dmg := 10 + rand.Float32()*scale(20, 1)
 		target.damage(dmg)
 	} else if roll < 80 {
-		fmt.Fprintf(out, "Wizard summons \033[38;5;226mmeteor\033[0m!")
+		fmt.Printf("Wizard summons \033[38;5;226mmeteor\033[0m!")
 		target.damage(35)
 	} else {
 		heal := w.hpcap * 0.20
 		w.hp = min(w.hp+heal, w.hpcap)
-		fmt.Fprintf(out, "Wizard cast healing! ")
-		fmt.Fprintf(out, "recover \033[38;5;83m%.1f\033[0m hp\n", heal)
+		fmt.Printf("Wizard cast healing! ")
+		fmt.Printf("recover \033[38;5;83m%.1f\033[0m hp\n", heal)
 	}
 }
 
@@ -160,7 +120,7 @@ func newChangeling() entity {
 }
 
 func (c *changeling) attack(target entity) {
-	fmt.Fprint(out, success)
+	fmt.Print(success)
 
 	if !c.mimic {
 		c.hp = target.attr().hp
@@ -168,11 +128,11 @@ func (c *changeling) attack(target entity) {
 		c.strength = target.attr().strength
 		c.defense = target.attr().defense
 		c.mimic = true
-		fmt.Fprintln(out, "Changeling \033[38;5;226mmorph\033[0m itself to look like you!")
+		fmt.Println("Changeling \033[38;5;226mmorph\033[0m itself to look like you!")
 		return
 	}
 
-	fmt.Fprintf(out, "Changeling attacked! ")
+	fmt.Printf("Changeling attacked! ")
 	target.damage(c.strength)
 }
 
@@ -196,24 +156,24 @@ func (v *vampire) attack(target entity) {
 	roll := roll()
 
 	if roll < 15 {
-		fmt.Fprint(out, fail)
-		fmt.Fprintf(out, "Vampire get exposed to sunlight! getting")
+		fmt.Print(fail)
+		fmt.Printf("Vampire get exposed to sunlight! getting")
 		v.damage(scale(10, 0.9))
 		return
 	}
 
-	fmt.Fprint(out, success)
+	fmt.Print(success)
 
 	if roll < 70 {
 		temp := target.attr().hp
-		fmt.Fprintf(out, "Vampire bites down hard! heal/deal")
+		fmt.Printf("Vampire bites down hard! heal/deal")
 		target.damage(v.strength)
 		v.hp = min(v.hp+temp-target.attr().hp, v.hpcap)
 	} else if roll < 85 {
-		fmt.Fprintf(out, "Vampire slashed you with claws!")
+		fmt.Printf("Vampire slashed you with claws!")
 		target.damage(v.strength)
 	} else {
-		fmt.Fprintf(out, "Vampire summoned then swarm you with bats!")
+		fmt.Printf("Vampire summoned then swarm you with bats!")
 		target.damage(v.strength * 1.2)
 	}
 }
@@ -235,7 +195,7 @@ func newDemon() entity {
 }
 
 func (d *demon) attack(target entity) {
-	fmt.Fprint(out, success)
+	fmt.Print(success)
 
 	if roll() < 60 {
 		messages := []string{
@@ -248,8 +208,8 @@ func (d *demon) attack(target entity) {
 		drain := d.strength + target.attr().hp*0.05
 		hp := max(target.attr().hp-drain, 0)
 		target.setHP(hp)
-		fmt.Fprintf(out, messages[rand.IntN(len(messages))])
-		fmt.Fprintf(out, " \033[38;5;198m%.1f\033[0m damage\n", drain)
+		fmt.Printf(messages[rand.IntN(len(messages))])
+		fmt.Printf(" \033[38;5;198m%.1f\033[0m damage\n", drain)
 		return
 	}
 
@@ -260,6 +220,6 @@ func (d *demon) attack(target entity) {
 		"Demon lunged before punching you in the gut!",
 	}
 
-	fmt.Fprintf(out, messages[rand.IntN(len(messages))])
+	fmt.Printf(messages[rand.IntN(len(messages))])
 	target.damage(d.strength)
 }
