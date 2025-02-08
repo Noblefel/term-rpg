@@ -63,10 +63,10 @@ func TestPlayer_Attack(t *testing.T) {
 		t.Errorf("enemy hp should be reduced to %.1f", 200-player.strength)
 	}
 
+	player.strength = 100
 	t.Run("with havoc perk", func(t *testing.T) {
 		attr.hp = 200
 		player.perk = 1
-		player.strength = 100
 		player.attack(enemy)
 		dmg := attr.hpcap - attr.hp
 
@@ -80,12 +80,23 @@ func TestPlayer_Attack(t *testing.T) {
 		player.perk = 2
 		player.hp = 30
 		player.hpcap = 100
-		player.strength = 100
 		player.attack(enemy)
 		dmg := attr.hpcap - attr.hp
 
 		if dmg != 110 {
 			t.Errorf("damage should be around 110 (10%% increase), got: %.1f", dmg)
+		}
+	})
+
+	t.Run("if low energy", func(t *testing.T) {
+		attr.hp = 200
+		player.perk = -1
+		player.energy = 0
+		player.attack(enemy)
+		dmg := attr.hpcap - attr.hp
+
+		if dmg != 90 {
+			t.Errorf("damage should be 90 (10%% decrease), got: %.1f", dmg)
 		}
 	})
 }
@@ -95,17 +106,18 @@ func TestPlayer_Damage(t *testing.T) {
 	player.hp = 10
 	player.defense = 5
 	player.damage(10)
+	player.effects = make(map[string]int)
 
 	if player.hp != 5 {
 		t.Errorf("hp should be 5, got %.1f", player.hp)
 	}
 
+	player.defense = 0
 	t.Run("with resiliency perk", func(t *testing.T) {
 		player.perk = 0
-		player.defense = 1
 		player.hp = 1000
 		player.damage(100)
-		want := 1000 - 90 + player.defense
+		var want float32 = 1000 - 90
 
 		if player.hp != want {
 			t.Errorf("hp should be %.1f (10%% dmg reduction), got: %.1f", want, player.hp)
@@ -114,13 +126,24 @@ func TestPlayer_Damage(t *testing.T) {
 
 	t.Run("with berserk perk and 20% hp", func(t *testing.T) {
 		player.perk = 2
-		player.defense = 1
 		player.hp = 200
 		player.hpcap = 1000
 		player.damage(100)
 
-		if player.hp != 120+player.defense {
+		if player.hp != 120 {
 			t.Errorf("hp should be %.1f (20%% dmg reduction), got: %.1f", 120+player.defense, player.hp)
+		}
+	})
+
+	t.Run("with guarded effect", func(t *testing.T) {
+		player.perk = -1
+		player.hp = 1000
+		player.effects["guarded"] = 1
+		player.damage(100)
+		var want float32 = 1000 - 60
+
+		if player.hp != want {
+			t.Errorf("hp should be %.1f (40%% dmg reduction), got: %.1f", want, player.hp)
 		}
 	})
 }
@@ -199,13 +222,32 @@ func TestPlayer_Skill(t *testing.T) {
 		}
 	})
 
-	t.Run("heal", func(t *testing.T) {
-		i := find("heal")
+	t.Run("guard", func(t *testing.T) {
+		i := find("guard")
+		player.skill(i, e)
+
+		if player.attr().effects["guarded"] != 2 {
+			t.Error("should get guarded effect for 2 turns, got", player.attr().effects["guarded"])
+		}
+	})
+
+	t.Run("heal spell", func(t *testing.T) {
+		i := find("heal spell")
 		player.hp = 0
 		player.skill(i, e)
 
 		if player.hp != 18 {
 			t.Errorf("should heal by 10 + 8%% hpcap, got %.1f", player.hp)
+		}
+	})
+
+	t.Run("heal potion", func(t *testing.T) {
+		i := find("heal potion")
+		player.hp = 0
+		player.skill(i, e)
+
+		if player.hp != 24 {
+			t.Errorf("should heal by 24 fixed, got %.1f", player.hp)
 		}
 	})
 
@@ -279,8 +321,8 @@ func TestPlayer_Skill(t *testing.T) {
 		player.skill(i, e)
 
 		dmg := 100 - attr.hp
-		if dmg != 6 {
-			t.Errorf("damage should be 6 (60%% strength), got %.1f", dmg)
+		if dmg != 8 {
+			t.Errorf("damage should be 8 (8s0%% strength), got %.1f", dmg)
 		}
 
 		if e.attr().effects["poisoned"] != 3 {
@@ -295,8 +337,8 @@ func TestPlayer_Skill(t *testing.T) {
 		player.skill(i, e)
 
 		dmg := 100 - attr.hp
-		if dmg != 3 {
-			t.Errorf("damage should be 3 (30%% strength), got %.1f", dmg)
+		if dmg != 5 {
+			t.Errorf("damage should be 5 (50%% strength), got %.1f", dmg)
 		}
 
 		if e.attr().effects["stunned"] != 2 {
@@ -392,6 +434,7 @@ func TestPlayer_Flee(t *testing.T) {
 
 	var e entity = &attributes{
 		strength: 20,
+		effects:  make(map[string]int),
 	}
 
 	t.Run("success roll", func(t *testing.T) {
@@ -409,6 +452,17 @@ func TestPlayer_Flee(t *testing.T) {
 
 		if player.hp != 80 {
 			t.Error("should be attacked by the enemy")
+		}
+	})
+
+	t.Run("too slow and get caught but enemy is stunned", func(t *testing.T) {
+		rolltest = 60
+		player.hp = 100
+		e.attr().effects["stunned"] = 1
+		player.flee(e)
+
+		if player.hp != 100 {
+			t.Error("should not be attacked by the enemy")
 		}
 	})
 

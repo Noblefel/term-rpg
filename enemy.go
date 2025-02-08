@@ -25,9 +25,9 @@ type knight struct {
 func newKnight() entity {
 	attr := attributes{
 		name:     "Knight",
-		hp:       scale(90, 4),
-		hpcap:    scale(90, 4),
-		defense:  scale(6, 0.4),
+		hp:       scale(90, 7),
+		hpcap:    scale(90, 7),
+		defense:  scale(6, 0.35),
 		strength: scale(9, 1),
 		effects:  make(map[string]int),
 	}
@@ -39,7 +39,7 @@ func (k *knight) attack(target entity) {
 	roll := roll()
 
 	if roll < 15 {
-		def := rand.Float32() * scale(5, 0.4)
+		def := 0.1 + rand.Float32()*scale(1, 0.35)
 		k.defense += def
 		k.hp = min(k.hp+5+def, k.hpcap)
 		fmt.Printf("The knight reinforced his armor! ")
@@ -64,9 +64,9 @@ type wizard struct {
 func newWizard() entity {
 	attr := attributes{
 		name:     "Wizard",
-		hp:       scale(55, 1.5),
-		hpcap:    scale(55, 1.5),
-		defense:  scale(2, 0.25),
+		hp:       scale(55, 3),
+		hpcap:    scale(55, 3),
+		defense:  scale(2, 0.15),
 		strength: scale(4, 0.65),
 		effects:  make(map[string]int),
 	}
@@ -143,9 +143,9 @@ type vampire struct {
 func newVampire() entity {
 	attr := attributes{
 		name:     "Vampire",
-		hp:       scale(80, 2.6),
-		hpcap:    scale(80, 2.6),
-		defense:  scale(4, 0.3),
+		hp:       scale(80, 5),
+		hpcap:    scale(80, 5),
+		defense:  scale(4, 0.15),
 		strength: scale(10, 1.9),
 		effects:  make(map[string]int),
 	}
@@ -185,9 +185,9 @@ type demon struct {
 func newDemon() entity {
 	attr := attributes{
 		name:     "Demon",
-		hp:       scale(112, 3),
-		hpcap:    scale(112, 3),
-		defense:  scale(4, 0.5),
+		hp:       scale(112, 8),
+		hpcap:    scale(112, 8),
+		defense:  scale(4, 0.3),
 		strength: scale(10, 1.8),
 		effects:  make(map[string]int),
 	}

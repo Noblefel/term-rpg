@@ -130,13 +130,23 @@ func TestVampire(t *testing.T) {
 		}
 	})
 
+	t.Run("claws", func(t *testing.T) {
+		rolltest = 70
+		p.hp = 100
+		vampire.attack(p)
+
+		dmg := vampire.attr().strength
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
 	t.Run("bat swarm", func(t *testing.T) {
 		rolltest = 85
 		p.hp = 100
 		vampire.attack(p)
 
 		dmg := vampire.attr().strength * 1.2
-
 		if dmg != 100-p.hp {
 			t.Errorf("damage should be %.1f (120%% strength), got %.1f", dmg, 100-p.hp)
 		}
@@ -159,6 +169,18 @@ func TestDemon(t *testing.T) {
 		dmg := demon.attr().strength + 50
 		if dmg != 1000-p.hp {
 			t.Errorf("damage should be %.1f (take 5%% hpcap and ignore defense), got %.1f", dmg, 1000-p.hp)
+		}
+	})
+
+	t.Run("basic attacks", func(t *testing.T) {
+		rolltest = 60
+		p.hp = 100
+		p.defense = 0
+		demon.attack(p)
+
+		dmg := demon.attr().strength
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
 		}
 	})
 }

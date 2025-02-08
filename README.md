@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/74143399-d9da-4b58-b220-ffb93c6d9c41
 
 | Name      | Effect                                             |
 | --------- | -------------------------------------------------- |
-| ⚔️ Attack | deal dmg based on strength                         |
+| ⚔️ Attack | deal dmg based on strength (reduced if low energy) |
 | 🔥 Skills | use variety of skills, cost energy                 |
 | 🧰 Items  | to be added                                        |
 | 🏃 Flee   | try to escape from the battle, may or may not fail |
@@ -14,27 +14,29 @@ https://github.com/user-attachments/assets/74143399-d9da-4b58-b220-ffb93c6d9c41
 
 ### Player perks
 
-| Name          | Effect                                       |
-| ------------- | -------------------------------------------- |
-| 🛡️ Resiliency | increase survivability                       |
-| ⚔️ Havoc      | extra damage, but low starting gold & max hp |
-| 🐻 Berserk    | more powerful the lower your hp is           |
-| 🐇 Ingenious  | skill cooldown is reduced by 1               |
-| 🍹 Poisoner   | give poison effect at the start of battle    |
+| Name          | Effect                                           |
+| ------------- | ------------------------------------------------ |
+| 🛡️ Resiliency | increase survivability                           |
+| ⚔️ Havoc      | +strength damage, but low starting gold & max hp |
+| 🐻 Berserk    | more powerful the lower your hp is               |
+| 🐇 Ingenious  | skill cooldown is reduced by 1                   |
+| 🍹 Poisoner   | give poison effect at the start of battle        |
 
-### Player skills
+### Player skills (can be equipped 5 at a time)
 
 | Name          | Desc                                                            |
 | ------------- | --------------------------------------------------------------- |
 | charge        | attack with 130% strength                                       |
-| heal          | recover hp by atleast 8% of your hpcap                          |
+| guard         | reduce incoming damage for 2 turns                              |
+| heal spell    | recover hp by atleast 8% of your hpcap                          |
+| heal potion   | recover hp by 24 (fixed number)                                 |
 | frenzy        | sacrifice hp to attack with 250% strength (no inherited effect) |
 | vision        | see enemy attributes (no cost)                                  |
 | drain         | take 20% of enemy current hp                                    |
 | absorb        | take 8% of enemy hp cap and ignore defense                      |
 | trick         | make the enemy target themselves                                |
-| poison        | attack 60% strength and poison enemy for 3 turns                |
-| stun          | attack 30% strength and stun enemy for 2 turns                  |
+| poison        | attack 80% strength and poison enemy for 3 turns                |
+| stun          | attack 50% strength and stun enemy for 2 turns                  |
 | fireball      | deal moderate amount of damage (fixed number/rng)               |
 | meteor strike | deal huge amount of damage (fixed number)                       |
 

@@ -11,6 +11,8 @@ type Player struct {
 	perk      int
 	energy    int
 	energycap int
+
+	skills [5]int //indexes
 }
 
 var skills = []struct {
@@ -20,14 +22,16 @@ var skills = []struct {
 	cd   int
 }{
 	{"charge", "attack 130% strength", 4, 5},
-	{"heal", "recover hp by atleast 8% of hpcap", 5, 5},
+	{"guard", "reduce incoming damage by 40% for 2 turns", 4, 3},
+	{"heal spell", "recover hp by atleast 8% hp", 5, 5},
+	{"heal potion", "recover hp by 24", 5, 6},
 	{"frenzy", "sacrifice hp to attack with 250% strength", 6, 6},
 	{"vision", "see enemy attributes", 0, 0},
 	{"drain", "take 20% of enemy current hp", 4, 4},
 	{"absorb", "take 8% of enemy hp cap and ignore defense", 5, 6},
 	{"trick", "make the enemy target themselves", 4, 3},
-	{"poison", "attack 60% strength and poison enemy for 3 turns", 5, 5},
-	{"stun", "attack 30% strength and stun enemy for 2 turns", 6, 4},
+	{"poison", "attack 80% strength and poison enemy for 3 turns", 5, 5},
+	{"stun", "attack 50% strength and stun enemy for 2 turns", 6, 4},
 	{"fireball", "deal moderate amount of damage", 7, 5},
 	{"meteor strike", "deal huge amount of damage", 10, 5},
 }
@@ -43,6 +47,8 @@ func NewPlayer(perk int) *Player {
 	player.energy = 20
 	player.energycap = 20
 	player.effects = make(map[string]int)
+	// charge, guard, healspell, poison, stun
+	player.skills = [5]int{0, 1, 2, 9, 10}
 
 	if perk == 0 {
 		player.hp += 5
@@ -60,6 +66,15 @@ func NewPlayer(perk int) *Player {
 }
 
 func (p *Player) attack(enemy entity) {
+	if p.energy > 3 {
+		fmt.Printf(success + "You attacked!")
+	} else {
+		fmt.Printf(success + "You attacked (exhausted)!")
+	}
+	enemy.damage(p.getstrength())
+}
+
+func (p Player) getstrength() float32 {
 	dmg := p.strength
 
 	if p.perk == 1 {
@@ -73,8 +88,11 @@ func (p *Player) attack(enemy entity) {
 		dmg += dmg * mul
 	}
 
-	fmt.Printf(success + "You attacked!")
-	enemy.damage(dmg)
+	if p.energy <= 3 {
+		dmg -= dmg * 0.1
+	}
+
+	return dmg
 }
 
 func (p *Player) damage(dmg float32) {
@@ -87,6 +105,10 @@ func (p *Player) damage(dmg float32) {
 		percent = min(percent, 1)         //if 40%+ hp = none
 		mul := 0.4 - percent*0.4
 		dmg -= dmg * mul
+	}
+
+	if p.effects["guarded"] > 0 {
+		dmg -= dmg * 0.4
 	}
 
 	p.attributes.damage(dmg)
@@ -110,25 +132,28 @@ func (p *Player) skill(i int, enemy entity) bool {
 
 	switch skill.name {
 	case "charge":
-		temp := p.strength
-		p.strength *= 1.3
-		p.attack(enemy)
-		p.strength = temp
-	case "heal":
+		enemy.damage(p.getstrength() * 1.3)
+	case "guard":
+		p.effects["guarded"] = 2
+		fmt.Println("reducing damage for 2 turn")
+	case "heal spell":
 		heal := 10 + p.hpcap*0.08
 		p.hp = min(p.hp+heal, p.hpcap)
 		fmt.Printf("recover \033[38;5;83m%.1f\033[0m hp\n", heal)
+	case "heal potion":
+		p.hp = min(p.hp+24, p.hpcap)
+		fmt.Print("recover \033[38;5;83m24\033[0m hp\n")
 	case "frenzy":
 		sacrifice := 0.20 * p.hp
 		sacrifice += 0.05 * p.hpcap
 		p.hp = max(p.hp-sacrifice, 0)
 		fmt.Printf("\033[38;5;198m-%.1f\033[0m hp and deal", sacrifice)
-		enemy.damage(p.strength * 2.5)
+		enemy.damage(p.getstrength() * 2.5)
 	case "vision":
 		fmt.Println("you can see they have")
 		fmt.Printf("hp cap   : %.1f\n", enemy.attr().hpcap)
-		fmt.Printf("strength : %.1f\n", enemy.attr().strength)
 		fmt.Printf("defense  : %.1f\n", enemy.attr().defense)
+		fmt.Printf("strength : %.1f\n", enemy.attr().strength)
 	case "drain":
 		drain := enemy.attr().hp * 0.2
 		enemy.damage(drain)
@@ -140,16 +165,10 @@ func (p *Player) skill(i int, enemy entity) bool {
 	case "trick":
 		enemy.attack(enemy)
 	case "poison":
-		temp := p.strength
-		p.strength *= 0.6
-		p.attack(enemy)
-		p.strength = temp
+		enemy.damage(p.getstrength() * 0.8)
 		enemy.attr().effects["poisoned"] += 3
 	case "stun":
-		temp := p.strength
-		p.strength *= 0.3
-		p.attack(enemy)
-		p.strength = temp
+		enemy.damage(p.getstrength() * 0.5)
 		enemy.attr().effects["stunned"] += 2
 	case "fireball":
 		dmg := 20 + rand.Float32()*15

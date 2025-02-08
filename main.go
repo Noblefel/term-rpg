@@ -3,14 +3,17 @@ package main
 import (
 	"fmt"
 	"math/rand/v2"
+	"os"
+	"strconv"
+	"strings"
+	"text/tabwriter"
 
 	"github.com/Noblefel/vivi"
 )
 
 var (
-	player *Player
-	stage  int
-
+	player  *Player
+	stage   int
 	success = "\033[38;5;83m✔\033[0m "
 	fail    = "\033[38;5;196m✘\033[0m "
 )
@@ -22,10 +25,10 @@ func main() {
 
 	perk := vivi.Choices(
 		"[1] 🛡️  Resiliency : increased survivability",
-		"[2] ⚔️  Havoc      : extra damage, but low starting gold & max hp",
+		"[2] ⚔️  Havoc      : +strength damage, but low starting gold & max hp",
 		"[3] 🐻 Berserk    : more powerful the lower your hp is",
 		"[4] 🐇 Ingenious  : skill cooldown reduced by 1",
-		"[5] 🍹 Poisoner   : give poison effect at the start of a battle",
+		"[5] 🍹 Poisoner   : give poison effect at the start of battle",
 	)
 
 	player = NewPlayer(perk)
@@ -103,14 +106,12 @@ func menuMain() {
 		fmt.Printf(" Stage  : %d \n", stage+1)
 		fmt.Println(" --------")
 
-		fmt.Printf("\033[s")
 		choice := vivi.Choices(
 			"[1] 🗺️  Battle",
 			"[2] 🏕️  Deep forest",
-			"[3] 📋 View Attributes",
-			"[4] 🛏️  Rest ($5)",
-			"[5] 💪 Train ($10)",
-			"[6] exit",
+			"[3] 📋 View attributes",
+			"[4] 📋 Equip skills",
+			"[5] 🏘️  Visit town",
 		)
 
 		switch choice {
@@ -127,32 +128,9 @@ func menuMain() {
 		case 2:
 			menuAttributes()
 		case 3:
-			if player.gold < 5 {
-				fmt.Print(fail)
-				fmt.Println("You don't have enough money to rest")
-				vivi.Choices("continue")
-				continue
-			}
-
-			fmt.Printf("\033[u\033[0J")
-			fmt.Printf("  resting... ")
-			player.rest()
-			vivi.Choices("continue")
+			menuSkills()
 		case 4:
-			if player.gold < 10 {
-				fmt.Print(fail)
-				fmt.Println("You don't have enough money to train")
-				vivi.Choices("continue")
-				continue
-			}
-
-			fmt.Printf("\033[u\033[0J")
-			fmt.Printf("  training... ")
-			timer(2500)
-			player.train()
-			vivi.Choices("continue")
-		case 5:
-			return
+			menuTown()
 		}
 	}
 }
@@ -185,41 +163,124 @@ func menuAttributes() {
 	vivi.Choices("Go back")
 }
 
+func menuSkills() {
+	var allskills strings.Builder
+	tw := tabwriter.NewWriter(&allskills, 0, 0, 2, ' ', tabwriter.Debug)
+	fmt.Fprintln(tw, "no\t skill\t description\t energy\t cooldown")
+	fmt.Fprintln(tw, "--\t --\t --\t --\t --")
+
+	for i, s := range skills {
+		fmt.Fprintf(tw, "%d\t %s\t %s\t %d\t %d\n",
+			i+1,
+			s.name,
+			s.desc,
+			s.cost,
+			s.cd,
+		)
+	}
+	tw.Flush()
+
+	for {
+		clearScreen()
+		fmt.Println("\033[1m[ Equipped skills ]\033[0m")
+		fmt.Println("-----")
+		var choices []string
+
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', tabwriter.Debug)
+		fmt.Fprintln(tw, "skill\t description\t energy\t cooldown")
+		for _, i := range player.skills {
+			choices = append(choices, skills[i].name)
+
+			fmt.Fprintf(tw, "%s\t %s\t %d\t %d\n",
+				skills[i].name,
+				skills[i].desc,
+				skills[i].cost,
+				skills[i].cd,
+			)
+		}
+		tw.Flush()
+		fmt.Println("\nselect the skill you want to change")
+
+		choices = append(choices, "go back")
+		i := vivi.Choices(choices...)
+
+		if i == len(choices)-1 {
+			return
+		}
+
+		clearScreen()
+		fmt.Println(allskills.String())
+
+		for {
+			fmt.Printf("switch \033[38;5;226m%s\033[0m with... (pick a number) > ", skills[i].name)
+			// using fmt.Scan didnt work somehow
+			newindex, _ := strconv.Atoi(vivi.Password("#"))
+
+			if newindex > 0 && newindex <= len(skills) {
+				player.skills[i] = int(newindex) - 1
+				break
+			}
+
+			fmt.Println("\033[38;5;196minvalid skill\033[0m")
+		}
+	}
+}
+
+func menuTown() {
+	for {
+		clearScreen()
+		fmt.Println(" \033[1m[ Town square ]\033[0m")
+		fmt.Println(" --------")
+		fmt.Printf(" Health : %s %.1f\n", player.attr().hpbar(), player.hp)
+		fmt.Printf(" Energy : %s %d\n", player.energybar(), player.energy)
+		fmt.Printf(" Gold   : %d \n", player.gold)
+		fmt.Println(" --------")
+		fmt.Printf("\033[s")
+
+		choices := vivi.Choices(
+			"[1] 🛏️  Guest house ($5)",
+			"[2] 💪 Training grounds ($10)",
+			"[3] go back",
+		)
+
+		switch choices {
+		case 0:
+			fmt.Printf("\033[u\033[0J")
+			if player.gold < 5 {
+				fmt.Print(fail)
+				fmt.Println("You don't have enough money to rest")
+				vivi.Choices("continue")
+				continue
+			}
+
+			fmt.Printf("  resting... ")
+			player.rest()
+			vivi.Choices("continue")
+		case 1:
+			fmt.Printf("\033[u\033[0J")
+			if player.gold < 10 {
+				fmt.Print(fail)
+				fmt.Println("You don't have enough money to train")
+				vivi.Choices("continue")
+				continue
+			}
+
+			fmt.Printf("  training... ")
+			timer(2500)
+			player.train()
+			vivi.Choices("continue")
+		case 2:
+			return
+		}
+	}
+}
+
 func menuBattle(enemy entity, exploring bool) {
 	defer clear(player.effects)
 	defer clear(enemy.attr().effects)
 
 	for {
 		clearScreen()
-
-		if enemy.attr().hp <= 0 && exploring {
-			fmt.Printf(success+"you've won against %s\n", enemy.attr().name)
-			vivi.Choices("continue your journey")
-			return
-		}
-
-		if player.hp <= 0 && exploring {
-			fmt.Printf(fail+"you've lost against %s\n", enemy.attr().name)
-			vivi.Choices("continue your journey")
-			return
-		}
-
-		if enemy.attr().hp <= 0 {
-			fmt.Println("You have \033[38;5;83mwon\033[0m the battle")
-			gold := scale(10, 2) + rand.Float32()*scale(40, 5)
-			player.gold += int(gold)
-			fmt.Printf(success+"got %d gold\n\n", int(gold))
-			vivi.Choices("return")
-			stage++
-			return
-		}
-
-		if player.hp <= 0 {
-			fmt.Println("You have \033[38;5;196mlost\033[0m the battle")
-			vivi.Choices("return")
-			return
-		}
-
 		fmt.Println("\033[1mYou\033[0m")
 		fmt.Printf("Health : %s %.1f\n", player.attr().hpbar(), player.hp)
 		fmt.Printf("Energy : %s %d\n", player.energybar(), player.energy)
@@ -253,6 +314,22 @@ func menuBattle(enemy entity, exploring bool) {
 			enemy.setHP(enemy.attr().hp - dmg)
 		}
 
+		if enemy.attr().hp <= 0 && exploring {
+			fmt.Printf(success+"you've won against %s\n", enemy.attr().name)
+			vivi.Choices("continue your journey")
+			return
+		}
+
+		if enemy.attr().hp <= 0 {
+			fmt.Println("You have \033[38;5;83mwon\033[0m the battle")
+			gold := scale(10, 2) + rand.Float32()*scale(20, 5)
+			player.gold += int(gold)
+			fmt.Printf("got %.0f gold\n", gold)
+			vivi.Choices("return")
+			stage++
+			return
+		}
+
 		if enemy.attr().effects["stunned"] > 0 {
 			fmt.Printf(fail+"%s is stunned\n", enemy.attr().name)
 		} else {
@@ -260,6 +337,18 @@ func menuBattle(enemy entity, exploring bool) {
 			timer(2000)
 			fmt.Printf("\r\033[K")
 			enemy.attack(player)
+		}
+
+		if player.hp <= 0 && exploring {
+			fmt.Printf(fail+"you've lost against %s\n", enemy.attr().name)
+			vivi.Choices("continue your journey")
+			return
+		}
+
+		if player.hp <= 0 {
+			fmt.Println("You have \033[38;5;196mlost\033[0m the battle")
+			vivi.Choices("return")
+			return
 		}
 
 		enemy.attr().decrementEffect()
@@ -289,15 +378,14 @@ func menuPlayerActions(enemy entity) {
 		case 1:
 			var choices []string
 
-			for _, s := range skills {
+			for _, i := range player.skills {
 				choice := fmt.Sprintf(
-					"%s\033[0m: %s, %d energy",
-					s.name,
-					s.desc,
-					s.cost,
+					"%s\033[0m: %d energy",
+					skills[i].name,
+					skills[i].cost,
 				)
 
-				if s.cost > player.energy || player.effects["cd_"+s.name] > 0 {
+				if skills[i].cost > player.energy || player.effects["cd_"+skills[i].name] > 0 {
 					choice = "\033[38;5;196m" + choice
 				} else {
 					choice = "\033[38;5;226m" + choice
@@ -310,7 +398,7 @@ func menuPlayerActions(enemy entity) {
 			i := vivi.Choices(choices...)
 			fmt.Printf("\033[u\033[0J")
 
-			if i < len(choices)-1 && player.skill(i, enemy) {
+			if i < len(choices)-1 && player.skill(player.skills[i], enemy) {
 				return
 			}
 		case 2:
