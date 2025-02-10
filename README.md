@@ -1,5 +1,3 @@
-A simple turn-based RPG game in terminal.
-
 https://github.com/user-attachments/assets/74143399-d9da-4b58-b220-ffb93c6d9c41
 
 ### Actions
@@ -24,21 +22,21 @@ https://github.com/user-attachments/assets/74143399-d9da-4b58-b220-ffb93c6d9c41
 
 ### Player skills (can be equipped 5 at a time)
 
-| Name          | Desc                                                            |
-| ------------- | --------------------------------------------------------------- |
-| charge        | attack with 130% strength                                       |
-| guard         | reduce incoming damage for 2 turns                              |
-| heal spell    | recover hp by atleast 8% of your hpcap                          |
-| heal potion   | recover hp by 24 (fixed number)                                 |
-| frenzy        | sacrifice hp to attack with 250% strength (no inherited effect) |
-| vision        | see enemy attributes (no cost)                                  |
-| drain         | take 20% of enemy current hp                                    |
-| absorb        | take 8% of enemy hp cap and ignore defense                      |
-| trick         | make the enemy target themselves                                |
-| poison        | attack 80% strength and poison enemy for 3 turns                |
-| stun          | attack 50% strength and stun enemy for 2 turns                  |
-| fireball      | deal moderate amount of damage (fixed number/rng)               |
-| meteor strike | deal huge amount of damage (fixed number)                       |
+| Name          | Desc                                              |
+| ------------- | ------------------------------------------------- |
+| charge        | attack with 130% strength                         |
+| guard         | reduce incoming damage for 2 turns                |
+| heal spell    | recover hp by atleast 8% of your hpcap            |
+| heal potion   | recover hp by 24 (fixed number)                   |
+| frenzy        | sacrifice hp to attack with 250% strength         |
+| vision        | see enemy attributes (no cost)                    |
+| drain         | take 20% of enemy current hp                      |
+| absorb        | take 8% of enemy hp cap and ignore defense        |
+| trick         | make the enemy target themselves                  |
+| poison        | attack 80% strength and poison enemy for 3 turns  |
+| stun          | attack 50% strength and stun enemy for 2 turns    |
+| fireball      | deal moderate amount of damage (fixed number/rng) |
+| meteor strike | deal huge amount of damage (fixed number)         |
 
 ### Enemies
 
