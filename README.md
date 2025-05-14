@@ -12,13 +12,14 @@ https://github.com/user-attachments/assets/74143399-d9da-4b58-b220-ffb93c6d9c41
 
 ### Player perks
 
-| Name          | Effect                                           |
-| ------------- | ------------------------------------------------ |
-| 🛡️ Resiliency | increase survivability                           |
-| ⚔️ Havoc      | +strength damage, but low starting gold & max hp |
-| 🐻 Berserk    | more powerful the lower your hp is               |
-| 🐇 Ingenious  | skill cooldown is reduced by 1                   |
-| 🍹 Poisoner   | give poison effect at the start of battle        |
+| Name         | Effect                                           |
+| ------------ | ------------------------------------------------ |
+| 🛡️ Resilient | increase overall defense                         |
+| ⚔️ Havoc     | +strength damage, but low starting gold & max hp |
+| 🐻 Berserk   | more powerful the lower your hp is               |
+| 🐇 Ingenious | +2 energy cap, skill cooldown is reduced by 2    |
+| 🍹 Poisoner  | give poison effect at the start of battle        |
+| 🏃 Survivor  | almost always succeed when fleeing               |
 
 ### Player skills (can be equipped 5 at a time)
 
@@ -33,10 +34,10 @@ https://github.com/user-attachments/assets/74143399-d9da-4b58-b220-ffb93c6d9c41
 | drain         | take 20% of enemy current hp                      |
 | absorb        | take 8% of enemy hp cap and ignore defense        |
 | trick         | make the enemy target themselves                  |
-| poison        | attack 80% strength and poison enemy for 3 turns  |
-| stun          | attack 50% strength and stun enemy for 2 turns    |
-| fireball      | deal moderate amount of damage (fixed number/rng) |
-| meteor strike | deal huge amount of damage (fixed number)         |
+| poison        | attack 85% strength and poison enemy for 3 turns  |
+| stun          | attack 60% strength and stun enemy for 2 turns    |
+| fireball      | deal moderate amount of damage (fixed number rng) |
+| meteor strike | deal huge amount of damage (fixed number rng)     |
 
 ### Enemies
 

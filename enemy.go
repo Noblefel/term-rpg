@@ -7,11 +7,11 @@ import (
 
 func randomEnemy() entity {
 	var enemies = []func() entity{
-		// newKnight,
-		// newWizard,
-		// newChangeling,
-		// newVampire,
-		// newDemon,
+		newKnight,
+		newWizard,
+		newChangeling,
+		newVampire,
+		newDemon,
 		newShardling,
 		newGenie,
 	}
@@ -27,9 +27,9 @@ type knight struct {
 func newKnight() entity {
 	attr := attributes{
 		name:     "Knight",
-		hp:       scale(90, 7),
-		hpcap:    scale(90, 7),
-		defense:  scale(6, 0.35),
+		hp:       scale(90, 14),
+		hpcap:    scale(90, 14),
+		defense:  scale(6, 0.3),
 		strength: scale(9, 1),
 		effects:  make(map[string]int),
 	}
@@ -66,9 +66,9 @@ type wizard struct {
 func newWizard() entity {
 	attr := attributes{
 		name:     "Wizard",
-		hp:       scale(55, 3),
-		hpcap:    scale(55, 3),
-		defense:  scale(2, 0.15),
+		hp:       scale(55, 6),
+		hpcap:    scale(55, 6),
+		defense:  scale(1, 0.1),
 		strength: scale(4, 0.65),
 		effects:  make(map[string]int),
 	}
@@ -145,9 +145,9 @@ type vampire struct {
 func newVampire() entity {
 	attr := attributes{
 		name:     "Vampire",
-		hp:       scale(80, 5),
-		hpcap:    scale(80, 5),
-		defense:  scale(4, 0.15),
+		hp:       scale(80, 10),
+		hpcap:    scale(80, 10),
+		defense:  scale(3, 0.13),
 		strength: scale(10, 1.9),
 		effects:  make(map[string]int),
 	}
@@ -187,9 +187,9 @@ type demon struct {
 func newDemon() entity {
 	attr := attributes{
 		name:     "Demon",
-		hp:       scale(112, 8),
-		hpcap:    scale(112, 8),
-		defense:  scale(4, 0.3),
+		hp:       scale(112, 16),
+		hpcap:    scale(112, 16),
+		defense:  scale(4, 0.28),
 		strength: scale(10, 1.8),
 		effects:  make(map[string]int),
 	}
@@ -233,9 +233,9 @@ type shardling struct {
 func newShardling() entity {
 	attr := attributes{
 		name:     "Shardling",
-		hp:       scale(60, 3.2),
-		hpcap:    scale(60, 3.2),
-		defense:  scale(10, 0.5),
+		hp:       scale(60, 6.4),
+		hpcap:    scale(60, 6.4),
+		defense:  scale(11, 0.4),
 		strength: scale(8, 1.32),
 		effects:  make(map[string]int),
 	}
@@ -281,9 +281,9 @@ type genie struct {
 func newGenie() entity {
 	attr := attributes{
 		name:     "Evil genie",
-		hp:       scale(100, 6),
-		hpcap:    scale(100, 6),
-		defense:  scale(2, 0.15),
+		hp:       scale(100, 12),
+		hpcap:    scale(100, 12),
+		defense:  scale(2, 0.14),
 		strength: scale(7, 0.85),
 		effects:  make(map[string]int),
 	}

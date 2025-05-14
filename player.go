@@ -23,17 +23,17 @@ var skills = []struct {
 }{
 	{"charge", "attack 130% strength", 4, 5},
 	{"guard", "reduce incoming damage by 40% for 2 turns", 4, 3},
-	{"heal spell", "recover hp by atleast 8% hp", 5, 5},
+	{"heal spell", "recover hp by atleast 8% hp cap", 5, 5},
 	{"heal potion", "recover hp by 24", 5, 6},
 	{"frenzy", "sacrifice hp to attack with 250% strength", 6, 6},
 	{"vision", "see enemy attributes", 0, 0},
 	{"drain", "take 20% of enemy current hp", 4, 4},
 	{"absorb", "take 8% of enemy hp cap and ignore defense", 5, 6},
 	{"trick", "make the enemy target themselves", 4, 3},
-	{"poison", "attack 80% strength and poison enemy for 3 turns", 5, 5},
-	{"stun", "attack 50% strength and stun enemy for 2 turns", 6, 4},
-	{"fireball", "deal moderate amount of damage", 7, 5},
-	{"meteor strike", "deal huge amount of damage", 10, 5},
+	{"poison", "attack 85% strength and poison enemy for 3 turns", 5, 5},
+	{"stun", "attack 60% strength and stun enemy for 2 turns", 6, 4},
+	{"fireball", "deal moderate amount of damage", 6, 5},
+	{"meteor strike", "deal huge amount of damage", 9, 5},
 }
 
 func NewPlayer(perk int) *Player {
@@ -61,6 +61,10 @@ func NewPlayer(perk int) *Player {
 		player.hp -= 25
 		player.hpcap -= 25
 		player.gold = 0
+	}
+
+	if perk == 3 {
+		player.energycap += 2
 	}
 
 	return &player
@@ -167,23 +171,23 @@ func (p *Player) skill(i int, enemy entity) bool {
 		fmt.Print("\n  self: ")
 		enemy.attack(enemy)
 	case "poison":
-		enemy.damage(p.getstrength() * 0.8)
+		enemy.damage(p.getstrength() * 0.85)
 		enemy.attr().effects["poisoned"] += 3
 	case "stun":
-		enemy.damage(p.getstrength() * 0.5)
+		enemy.damage(p.getstrength() * 0.6)
 		enemy.attr().effects["stunned"] += 2
 	case "fireball":
-		dmg := 20 + rand.Float32()*15
+		dmg := 20 + rand.Float32()*20
 		enemy.damage(dmg)
 	case "meteor strike":
-		dmg := 20 + rand.Float32()*60
+		dmg := 20 + rand.Float32()*70
 		enemy.damage(dmg)
 	}
 
 	cooldown := skill.cd
 
 	if p.perk == 3 {
-		cooldown--
+		cooldown -= 2
 	}
 
 	if p.perk == 2 && p.hp/p.hpcap <= 0.15 {
@@ -250,7 +254,7 @@ func (p *Player) train() {
 func (p *Player) flee(enemy entity) {
 	roll := roll()
 
-	if roll < 60 {
+	if roll < 30 || (roll < 92 && player.perk == 5) {
 		fmt.Print(success)
 		fmt.Println("You have fled the battle")
 		p.effects["fled"] = 1

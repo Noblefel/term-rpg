@@ -23,7 +23,7 @@ func TestNewPlayer(t *testing.T) {
 		t.Errorf("default energycap should be 20, got %d", player.energycap)
 	}
 
-	t.Run("with resiliency perk", func(t *testing.T) {
+	t.Run("with resilient perk", func(t *testing.T) {
 		player := NewPlayer(0)
 
 		if player.hpcap != 105 {
@@ -113,7 +113,7 @@ func TestPlayer_Damage(t *testing.T) {
 	}
 
 	player.defense = 0
-	t.Run("with resiliency perk", func(t *testing.T) {
+	t.Run("with resilient perk", func(t *testing.T) {
 		player.perk = 0
 		player.hp = 1000
 		player.damage(100)
@@ -190,9 +190,10 @@ func TestPlayer_Skill(t *testing.T) {
 		player.perk = 3
 		player.skill(i, e)
 		cd := player.effects["cd_"+skills[0].name]
+		clear(player.effects)
 
-		if cd != basecd-1 {
-			t.Errorf("cooldown should be reduced by one, want %d, got %d", basecd-1, cd)
+		if cd != basecd-2 {
+			t.Errorf("cooldown should be reduced by 2, want %d, got %d", basecd-2, cd)
 		}
 	})
 
@@ -203,13 +204,17 @@ func TestPlayer_Skill(t *testing.T) {
 		player.hp = 1
 		player.skill(i, e)
 		cd := player.effects["cd_"+skills[0].name]
+		clear(player.effects)
 
 		if cd != basecd-1 {
 			t.Errorf("cooldown should be reduced by one, want %d, got %d", basecd-1, cd)
 		}
 	})
+
 	t.Run("charge", func(t *testing.T) {
+		attr.hp = 100
 		i := find("charge")
+		player.perk = -1
 		player.skill(i, e)
 
 		dmg := 100 - attr.hp
@@ -321,8 +326,8 @@ func TestPlayer_Skill(t *testing.T) {
 		player.skill(i, e)
 
 		dmg := 100 - attr.hp
-		if dmg != 8 {
-			t.Errorf("damage should be 8 (8s0%% strength), got %.1f", dmg)
+		if dmg != 8.5 {
+			t.Errorf("damage should be 8.5 (85%% strength), got %.1f", dmg)
 		}
 
 		if e.attr().effects["poisoned"] != 3 {
@@ -337,8 +342,8 @@ func TestPlayer_Skill(t *testing.T) {
 		player.skill(i, e)
 
 		dmg := 100 - attr.hp
-		if dmg != 5 {
-			t.Errorf("damage should be 5 (50%% strength), got %.1f", dmg)
+		if dmg != 6 {
+			t.Errorf("damage should be 6 (60%% strength), got %.1f", dmg)
 		}
 
 		if e.attr().effects["stunned"] != 2 {

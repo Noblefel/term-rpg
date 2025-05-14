@@ -24,11 +24,12 @@ func main() {
 	fmt.Println("------------------------------------------")
 
 	perk := vivi.Choices(
-		"[1] 🛡️  Resiliency : increased survivability",
+		"[1] 🛡️  Resilient : increase overall defense",
 		"[2] ⚔️  Havoc      : +strength damage, but low starting gold & max hp",
 		"[3] 🐻 Berserk    : more powerful the lower your hp is",
-		"[4] 🐇 Ingenious  : skill cooldown reduced by 1",
+		"[4] 🐇 Ingenious  : +2 energy cap, skill cooldown reduced by 2",
 		"[5] 🍹 Poisoner   : give poison effect at the start of battle",
+		"[6] 🏃 Survivor   : almost always succeed when fleeing",
 	)
 
 	player = NewPlayer(perk)
@@ -39,8 +40,9 @@ func main() {
 func menuPoints() {
 	var (
 		points    = 10
-		temphpcap = player.hpcap
 		tempdef   = player.defense
+		temphpcap = player.hpcap
+		tempencap = player.energycap
 	)
 
 	for {
@@ -57,12 +59,12 @@ func menuPoints() {
 			"increase HP cap by 3",
 			"increase strength by 0.25",
 			"increase defense by 0.25",
-			"increase energy cap by 1 (2 points)",
+			"increase energy cap by 1 (3 points)",
 			"Reset",
 			"Done",
 		)
 
-		if choice < 3 && points == 0 || choice == 3 && points < 2 {
+		if choice < 3 && points == 0 || choice == 3 && points < 3 {
 			fmt.Println("\033[38;5;196mnot enough points\033[0m")
 			vivi.Choices("continue")
 			continue
@@ -80,13 +82,13 @@ func menuPoints() {
 			points--
 		case 3:
 			player.energycap++
-			points -= 2
+			points -= 3
 		case 4:
 			points = 10
 			player.hpcap = temphpcap
 			player.defense = tempdef
 			player.strength = 20
-			player.energycap = 20
+			player.energycap = tempencap
 		case 5:
 			player.hp = player.hpcap
 			player.energy = player.energycap
@@ -147,16 +149,16 @@ func menuAttributes() {
 		energycap = bars(40, float32(player.energycap), 40)
 	)
 
-	fmt.Printf("HP cap    :")
+	fmt.Printf("HP cap     :")
 	fmt.Printf("%s %.1f\n", "\033[38;5;83m"+hpcap[0]+"\033[0m"+hpcap[1], player.hpcap)
 
-	fmt.Printf("Strength  :")
+	fmt.Printf("Strength   :")
 	fmt.Printf("%s %.1f\n", "\033[38;5;83m"+strength[0]+"\033[0m"+strength[1], player.strength)
 
-	fmt.Printf("Defense   :")
+	fmt.Printf("Defense    :")
 	fmt.Printf("%s %.1f\n", "\033[38;5;83m"+defense[0]+"\033[0m"+defense[1], player.defense)
 
-	fmt.Printf("Energy cap:")
+	fmt.Printf("Energy cap :")
 	fmt.Printf("%s %d\n", "\033[38;5;83m"+energycap[0]+"\033[0m"+energycap[1], player.energycap)
 
 	fmt.Printf("\n")
