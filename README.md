@@ -40,13 +40,18 @@ https://github.com/user-attachments/assets/74143399-d9da-4b58-b220-ffb93c6d9c41
 
 ### Enemies
 
-| Name          | Summary                                                | Special              |
-| ------------- | ------------------------------------------------------ | -------------------- |
-| Knight 🛡️     | decent all-rounder with good defense                   | defense buff         |
-| Wizard 🧙     | easy to take out, but has great damage                 | various spells, heal |
-| Changeling 🎭 | will morph itself to be like **you**                   | attribute copy       |
-| Vampire 🧛    | powerful enemy with both good attack and survivability | lifesteal            |
-| Demon 👹      | powerful enemy that cares little about your defense    | ignore defense       |
+| Name            | Summary                                                 | Special              |
+| --------------- | ------------------------------------------------------- | -------------------- |
+| Knight 🛡️       | decent all-rounder with good defense                    | defense buff         |
+| Wizard 🧙       | easy to take out, but has great damage                  | various spells, heal |
+| Changeling 🎭   | will morph itself to be like **you**                    | attribute copy       |
+| Vampire 🧛      | powerful enemy with both good attack and survivability  | lifesteal            |
+| Demon 👹        | powerful enemy that cares little about your defense     | ignore defense       |
+| Shardling ⛰️    | has a tough defense and will reflect damage             | reflect damage       |
+| Evil Genie 🔮   | can straight up **curse** you permanently               | debuff, illusion     |
+| Vine Monster 🌲 | (tba) attacks have high chance to ensnare you           | block turn           |
+| Werewolf 🐺     | (tba) starts off weak until it gets **awakened**        | buff                 |
+| Cleric ☀️       | (tba) convert "purify" stack into small-**EXTREME** dmg | **final exorcism**   |
 
 ### Other
 

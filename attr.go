@@ -37,7 +37,7 @@ func (attr *attributes) setHP(hp float32) {
 func (attr *attributes) damage(dmg float32) {
 	dmg = max(dmg-attr.defense, 1)
 	attr.hp = max(attr.hp-dmg, 0)
-	fmt.Printf(" \033[38;5;198m%.1f\033[0m damage\n", dmg)
+	fmt.Printf(" \033[38;5;198m%.1f\033[0m\n", dmg)
 }
 
 func (attr attributes) decrementEffect() {

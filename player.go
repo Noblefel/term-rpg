@@ -38,6 +38,7 @@ var skills = []struct {
 
 func NewPlayer(perk int) *Player {
 	var player Player
+	player.name = "player"
 	player.hp = 100
 	player.hpcap = 100
 	player.defense = 1
@@ -163,6 +164,7 @@ func (p *Player) skill(i int, enemy entity) bool {
 		enemy.setHP(newhp)
 		fmt.Printf("take \033[38;5;198m%.1f\033[0m enemy hp\n", absorb)
 	case "trick":
+		fmt.Print("\n  self: ")
 		enemy.attack(enemy)
 	case "poison":
 		enemy.damage(p.getstrength() * 0.8)

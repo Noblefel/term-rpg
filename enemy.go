@@ -7,11 +7,13 @@ import (
 
 func randomEnemy() entity {
 	var enemies = []func() entity{
-		newKnight,
-		newWizard,
-		newChangeling,
-		newVampire,
-		newDemon,
+		// newKnight,
+		// newWizard,
+		// newChangeling,
+		// newVampire,
+		// newDemon,
+		newShardling,
+		newGenie,
 	}
 
 	spawn := enemies[rand.IntN(len(enemies))]
@@ -166,7 +168,7 @@ func (v *vampire) attack(target entity) {
 
 	if roll < 70 {
 		temp := target.attr().hp
-		fmt.Printf("Vampire bites down hard! heal/deal")
+		fmt.Printf("Vampire bites down hard! heal & deal:")
 		target.damage(v.strength)
 		v.hp = min(v.hp+temp-target.attr().hp, v.hpcap)
 	} else if roll < 85 {
@@ -205,11 +207,11 @@ func (d *demon) attack(target entity) {
 			"Demon conjure dark energy that weakens you whole!",
 		}
 
-		drain := d.strength + target.attr().hp*0.05
+		drain := d.strength + target.attr().hp*0.07
 		hp := max(target.attr().hp-drain, 0)
 		target.setHP(hp)
 		fmt.Printf(messages[rand.IntN(len(messages))])
-		fmt.Printf(" \033[38;5;198m%.1f\033[0m damage\n", drain)
+		fmt.Printf(" \033[38;5;198m%.1f\033[0m\n", drain)
 		return
 	}
 
@@ -222,4 +224,123 @@ func (d *demon) attack(target entity) {
 
 	fmt.Printf(messages[rand.IntN(len(messages))])
 	target.damage(d.strength)
+}
+
+type shardling struct {
+	attributes
+}
+
+func newShardling() entity {
+	attr := attributes{
+		name:     "Shardling",
+		hp:       scale(60, 3.2),
+		hpcap:    scale(60, 3.2),
+		defense:  scale(10, 0.5),
+		strength: scale(8, 1.32),
+		effects:  make(map[string]int),
+	}
+
+	return &shardling{attr}
+}
+
+func (s *shardling) attack(target entity) {
+	fmt.Print(success)
+	roll := roll()
+
+	if roll < 20 {
+		fmt.Printf("Shardling rams itself onto you!")
+		target.damage(s.strength)
+	} else if roll < 40 {
+		fmt.Printf("Shardling strikes with its crystal limbs!")
+		target.damage(s.strength * 1.1)
+	} else if roll < 80 {
+		fmt.Printf("Shardling launched volley of shards!")
+		dmg := rand.Float32()*10 + s.strength
+		target.damage(dmg)
+	} else {
+		fmt.Printf("Shardling impales you with crystal spike!")
+		target.damage(20 + s.strength)
+	}
+}
+
+func (s *shardling) damage(n float32) {
+	hp := s.hp
+	s.attributes.damage(n)
+	reflect := (hp - s.hp) * 0.3
+	// quick & dirty way by accessing the global var.
+	// i dont want to modify the interface just for this one.
+	// and this cant self-target.
+	fmt.Print("  reflected:")
+	player.damage(reflect)
+}
+
+type genie struct {
+	attributes
+}
+
+func newGenie() entity {
+	attr := attributes{
+		name:     "Evil genie",
+		hp:       scale(100, 6),
+		hpcap:    scale(100, 6),
+		defense:  scale(2, 0.15),
+		strength: scale(7, 0.85),
+		effects:  make(map[string]int),
+	}
+
+	return &genie{attr}
+}
+
+func (g *genie) attack(target entity) {
+	fmt.Print(success)
+	roll := roll()
+
+	var attr *attributes
+
+	if v, ok := target.(*Player); ok {
+		attr = &v.attributes
+	}
+
+	if v, ok := target.(*genie); ok { //for self target when hit by "trick" player skill
+		attr = &v.attributes
+	}
+
+	if roll < 5 {
+		curse := 0.5 + rand.Float32()*4
+		attr.hpcap = max(50, attr.hpcap-curse)
+
+		fmt.Print("Genie placed a \033[38;5;226mcurse mark\033[0m! ")
+		fmt.Printf("hp cap reduced by %.1f\n", curse)
+	} else if roll < 10 {
+		curse := 0.1 + rand.Float32()*1
+		attr.strength = max(5, attr.strength-curse)
+
+		fmt.Print("Genie placed a \033[38;5;226mcurse mark\033[0m! ")
+		fmt.Printf("strength reduced by %.1f\n", curse)
+	} else if roll < 15 {
+		curse := 0.1 + rand.Float32()*0.8
+		attr.defense = max(1, attr.defense-curse)
+
+		fmt.Print("Genie placed a \033[38;5;226mcurse mark\033[0m! ")
+		fmt.Printf("defense reduced by %.1f\n", curse)
+	} else if roll < 18 && attr.name == "player" {
+		p := target.(*Player)
+		p.energycap = max(10, p.energycap-1)
+
+		fmt.Print("Genie placed a \033[38;5;226mcurse mark\033[0m! ")
+		fmt.Println("energy cap reduced by 1")
+	} else if roll < 31 {
+		fmt.Println("Genie cast an \033[38;5;226millusion\033[0m!")
+		fmt.Print("  self: ")
+		target.attack(target)
+	} else if roll < 53 {
+		fmt.Printf("Genie cast a \033[38;5;226msandstorm\033[0m!")
+		target.damage(g.strength*0.8 + scale(25, 1))
+	} else if roll < 80 {
+		fmt.Printf("Genie blast you with magical energy!")
+		target.damage(g.strength*1.4 + 10)
+	} else {
+		fmt.Printf("Genie reach out for a punch!")
+		target.damage(g.strength)
+	}
 }
