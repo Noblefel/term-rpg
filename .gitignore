@@ -2,3 +2,4 @@ cover.out
 todo.txt
 *.exe
 /bin
+savegame.json

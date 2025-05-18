@@ -19,22 +19,42 @@ var (
 )
 
 func main() {
+	fmt.Println("------------------------------------------")
+	fmt.Println("load save file?")
+
+	if vivi.Choices("yes", "no") == 0 {
+		if err := load(); err != nil {
+			fmt.Println(fail, "error loading savefile")
+			fmt.Println(fail, err)
+			vivi.Choices("start a new game")
+			// player = nil
+		}
+	}
+
+	if player == nil {
+		perk := selectPerks()
+		player = NewPlayer()
+		player.setPerk(perk)
+		menuPoints()
+	}
+
+	menuMain()
+}
+
+func selectPerks() int {
 	clearScreen()
-	fmt.Println(" \033[1m[ Welcome ]\033[0m select your player perk")
+	fmt.Println("please select your player perk")
 	fmt.Println("------------------------------------------")
 
-	perk := vivi.Choices(
+	return vivi.Choices(
 		"[1] 🛡️  Resilient : increase overall defense",
-		"[2] ⚔️  Havoc      : +strength damage, but low starting gold & max hp",
+		"[2] ⚔️  Havoc      : +20%% damage, but low starting gold & energy cap",
 		"[3] 🐻 Berserk    : more powerful the lower your hp is",
 		"[4] 🐇 Ingenious  : +2 energy cap, skill cooldown reduced by 2",
-		"[5] 🍹 Poisoner   : give poison effect at the start of battle",
-		"[6] 🏃 Survivor   : almost always succeed when fleeing",
+		"[5] 🍹 Poisoner   : give severe poisoning effect at the start of battle",
+		"[6] ⚰️  Deadman   : give weaken effect at the start of battle",
+		"[7] 🏃 Survivor   : almost always succeed when fleeing",
 	)
-
-	player = NewPlayer(perk)
-	menuPoints()
-	menuMain()
 }
 
 func menuPoints() {
@@ -54,6 +74,7 @@ func menuPoints() {
 		fmt.Printf("Defense    : %.1f\n", player.defense)
 		fmt.Printf("Energy cap : %.d\n", player.energycap)
 		fmt.Println("------------------------------------------")
+		fmt.Printf("\033[s")
 
 		choice := vivi.Choices(
 			"increase HP cap by 3",
@@ -65,6 +86,7 @@ func menuPoints() {
 		)
 
 		if choice < 3 && points == 0 || choice == 3 && points < 3 {
+			fmt.Print("\033[u\033[0J")
 			fmt.Println("\033[38;5;196mnot enough points\033[0m")
 			vivi.Choices("continue")
 			continue
@@ -100,20 +122,20 @@ func menuPoints() {
 func menuMain() {
 	for {
 		clearScreen()
-		fmt.Println(" \033[1m[ Main Menu ]\033[0m")
-		fmt.Println(" --------")
 		fmt.Printf(" Health : %s %.1f\n", player.attr().hpbar(), player.hp)
 		fmt.Printf(" Energy : %s %d\n", player.energybar(), player.energy)
+		fmt.Printf(" Perk   : %s \n", player.getperk())
 		fmt.Printf(" Gold   : %d \n", player.gold)
 		fmt.Printf(" Stage  : %d \n", stage+1)
 		fmt.Println(" --------")
 
 		choice := vivi.Choices(
-			"[1] 🗺️  Battle",
-			"[2] 🏕️  Deep forest",
-			"[3] 📋 View attributes",
-			"[4] 📋 Equip skills",
-			"[5] 🏘️  Visit town",
+			"[1] 🗺️  battle",
+			"[2] 🏕️  deep forest",
+			"[3] 📋 view attributes",
+			"[4] 📋 equip skills",
+			"[5] 🏘️  visit town",
+			"[6] save game",
 		)
 
 		switch choice {
@@ -121,7 +143,15 @@ func menuMain() {
 			enemy := randomEnemy()
 
 			if player.perk == 4 {
-				enemy.attr().effects["poisoned"] = 3
+				enemy.attr().effects["poisoned severe"] = 3
+			}
+
+			if player.perk == 5 {
+				enemy.attr().effects["weakened"] = 3
+			}
+
+			if _, ok := enemy.(*undead); ok {
+				player.effects["weakened"] = 3
 			}
 
 			menuBattle(enemy, false)
@@ -133,13 +163,21 @@ func menuMain() {
 			menuSkills()
 		case 4:
 			menuTown()
+		case 5:
+			if err := save(); err != nil {
+				fmt.Println("error:", err)
+			} else {
+				fmt.Println("progress saved")
+			}
+
+			vivi.Choices("ok")
 		}
 	}
 }
 
 func menuAttributes() {
 	clearScreen()
-	fmt.Println("\033[1m[ Player attributes ]\033[0m")
+	fmt.Println("\033[1mPlayer attributes\033[0m")
 	fmt.Println("----------")
 
 	var (
@@ -231,47 +269,67 @@ func menuSkills() {
 func menuTown() {
 	for {
 		clearScreen()
-		fmt.Println(" \033[1m[ Town square ]\033[0m")
+		fmt.Println(" \033[1mTown square\033[0m")
 		fmt.Println(" --------")
 		fmt.Printf(" Health : %s %.1f\n", player.attr().hpbar(), player.hp)
 		fmt.Printf(" Energy : %s %d\n", player.energybar(), player.energy)
+		fmt.Printf(" Perk   : %s \n", player.getperk())
 		fmt.Printf(" Gold   : %d \n", player.gold)
-		fmt.Println(" --------")
-		fmt.Printf("\033[s")
+		fmt.Println(" -------- ")
+		fmt.Print("\033[s")
 
 		choices := vivi.Choices(
-			"[1] 🛏️  Guest house ($5)",
-			"[2] 💪 Training grounds ($10)",
-			"[3] go back",
+			"[1] guest house ($5)",
+			"[2] training grounds ($10)",
+			"[3] switch perk ($34)",
+			"[4] go back",
 		)
 
+		fmt.Print("\033[u\033[0J")
 		switch choices {
 		case 0:
-			fmt.Printf("\033[u\033[0J")
 			if player.gold < 5 {
-				fmt.Print(fail)
-				fmt.Println("You don't have enough money to rest")
+				fmt.Println(fail + "not enough gold to rest")
 				vivi.Choices("continue")
 				continue
 			}
 
-			fmt.Printf("  resting... ")
+			fmt.Print("  resting... ")
+			player.gold -= 5
 			player.rest()
 			vivi.Choices("continue")
 		case 1:
-			fmt.Printf("\033[u\033[0J")
 			if player.gold < 10 {
-				fmt.Print(fail)
-				fmt.Println("You don't have enough money to train")
+				fmt.Println(fail + "not enough gold to train")
 				vivi.Choices("continue")
 				continue
 			}
 
 			fmt.Printf("  training... ")
 			timer(2500)
+			player.gold -= 10
 			player.train()
 			vivi.Choices("continue")
 		case 2:
+			if player.gold < 34 {
+				fmt.Println(fail + "not enough gold to switch perk")
+				vivi.Choices("continue")
+				continue
+			}
+
+			newperk := selectPerks()
+
+			if newperk == player.perk {
+				fmt.Println(fail + "you already have that perk")
+				vivi.Choices("go back")
+				continue
+			}
+
+			player.gold -= 34
+			player.setPerk(newperk)
+			fmt.Println(success + "perk changed")
+			vivi.Choices("continue")
+		case 3:
 			return
 		}
 	}
@@ -291,15 +349,10 @@ func menuBattle(enemy entity, exploring bool) {
 		fmt.Printf("Health : %s %.1f\n", enemy.attr().hpbar(), enemy.attr().hp)
 		fmt.Println("--------")
 
-		if player.effects["poisoned"] > 0 {
-			dmg := player.hp * 0.07
-			fmt.Print("  You took ", enemy.attr().name)
-			fmt.Printf("\033[38;5;198m%.1f\033[0m poison damage\n", dmg)
-			player.hp = max(player.hp-dmg, 0)
-		}
+		player.applyEffects()
 
 		if player.effects["stunned"] > 0 {
-			fmt.Println(fail + "You are stunned")
+			fmt.Println(fail + "you are stunned")
 		} else {
 			menuPlayerActions(enemy)
 		}
@@ -309,12 +362,7 @@ func menuBattle(enemy entity, exploring bool) {
 			return
 		}
 
-		if enemy.attr().effects["poisoned"] > 0 {
-			dmg := enemy.attr().hp * 0.07
-			fmt.Printf("  %s took ", enemy.attr().name)
-			fmt.Printf("\033[38;5;198m%.1f\033[0m poison damage\n", dmg)
-			enemy.setHP(enemy.attr().hp - dmg)
-		}
+		enemy.applyEffects()
 
 		if enemy.attr().hp <= 0 && exploring {
 			fmt.Printf(success+"you've won against %s\n", enemy.attr().name)
@@ -323,7 +371,7 @@ func menuBattle(enemy entity, exploring bool) {
 		}
 
 		if enemy.attr().hp <= 0 {
-			fmt.Println("You have \033[38;5;83mwon\033[0m the battle")
+			fmt.Println("you have \033[38;5;83mwon\033[0m the battle")
 			gold := scale(10, 2) + rand.Float32()*scale(20, 5)
 			player.gold += int(gold)
 			fmt.Printf("got %.0f gold\n", gold)
@@ -348,7 +396,7 @@ func menuBattle(enemy entity, exploring bool) {
 		}
 
 		if player.hp <= 0 {
-			fmt.Println("You have \033[38;5;196mlost\033[0m the battle")
+			fmt.Println("you have \033[38;5;196mlost\033[0m the battle")
 			vivi.Choices("return")
 			return
 		}
@@ -378,6 +426,11 @@ func menuPlayerActions(enemy entity) {
 			player.attack(enemy)
 			return
 		case 1:
+			if _, ok := enemy.(*celestial); ok {
+				fmt.Println("  \033[38;5;196mcannot use skill in the presence of the divine\033[0m")
+				continue
+			}
+
 			var choices []string
 
 			for _, i := range player.skills {
@@ -387,13 +440,27 @@ func menuPlayerActions(enemy entity) {
 					skills[i].cost,
 				)
 
-				if skills[i].cost > player.energy || player.effects["cd_"+skills[i].name] > 0 {
+				cost := skills[i].cost
+
+				if player.effects["confused"] > 0 {
+					cost++
+				}
+
+				if cost > player.energy || player.effects["cd"+skills[i].name] > 0 {
 					choice = "\033[38;5;196m" + choice
 				} else {
 					choice = "\033[38;5;226m" + choice
 				}
 
 				choices = append(choices, choice)
+			}
+
+			if player.effects["confused"] > 0 {
+				fmt.Println("warning, you are \033[38;5;226mconfused\033[0m! energy cost increased by 1")
+			}
+
+			if player.perk == 2 && player.hp/player.hpcap <= 0.15 {
+				fmt.Println("berserk perk bonus! cooldown decreased by 1")
 			}
 
 			choices = append(choices, "cancel")
