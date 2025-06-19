@@ -5,7 +5,7 @@ import (
 	"math/rand/v2"
 )
 
-func randomEnemy() entity {
+func spawn() entity {
 	var enemies = []func() entity{
 		newKnight,
 		newWizard,
@@ -17,6 +17,8 @@ func randomEnemy() entity {
 		newCelestial,
 		newShapeshift,
 		newUndead,
+		newScorpion,
+		newGoblin,
 	}
 
 	spawn := enemies[rand.IntN(len(enemies))]
@@ -30,10 +32,11 @@ type knight struct {
 func newKnight() entity {
 	attr := attributes{
 		name:     "knight",
-		hp:       scale(90, 14),
-		hpcap:    scale(90, 14),
-		defense:  scale(6, 0.3),
-		strength: scale(9, 1),
+		hp:       scale(250, 30),
+		hpcap:    scale(250, 30),
+		defense:  scale(25, 2.8),
+		strength: scale(42, 3.25),
+		agility:  scale(7, 0.18),
 		effects:  make(map[string]int),
 	}
 	return &knight{attr}
@@ -44,14 +47,14 @@ func (k *knight) attack(target entity) {
 	roll := roll()
 
 	if roll < 15 {
-		def := 0.1 + rand.Float32()*(k.defense/10)
+		def := 0.5 + rand.Float32()*(k.defense/10)
 		k.defense += def
-		k.hp = min(k.hp+5+def, k.hpcap)
+		k.hp = min(k.hp+def+20, k.hpcap)
 
 		fmt.Print("the knight reinforced his armor! ")
 		fmt.Printf("\033[38;5;83m+%.1f\033[0m defense\n", def)
 	} else if roll < 30 {
-		fmt.Println("the knight \033[38;5;226mstrengthen\033[0m himself!")
+		fmt.Print("the knight \033[38;5;226mstrengthen\033[0m himself!")
 		k.attackWith(target, k.strength)
 		k.effects["strengthen"] = 4
 	} else {
@@ -74,10 +77,11 @@ type wizard struct {
 func newWizard() entity {
 	attr := attributes{
 		name:     "wizard",
-		hp:       scale(55, 6),
-		hpcap:    scale(55, 6),
-		defense:  scale(1, 0.1),
-		strength: scale(4, 0.65),
+		hp:       scale(132, 11.5),
+		hpcap:    scale(132, 11.5),
+		defense:  scale(12, 0.75),
+		strength: scale(25, 2.66),
+		agility:  scale(3, 0.07),
 		effects:  make(map[string]int),
 	}
 	return &wizard{attr}
@@ -100,21 +104,22 @@ func (w *wizard) attack(target entity) {
 		fmt.Println("wizard cast magical \033[38;5;226mbarrier\033[0m!")
 	} else if roll < 35 {
 		target.attr().effects["confused"] = 5
-		fmt.Println("wizard cast \033[38;5;226mconfusion\033[0m!")
+		fmt.Print("wizard cast \033[38;5;226mconfusion\033[0m!")
+		target.damage(w.strength * 0.6)
 	} else if roll < 50 {
 		fmt.Printf("wizard cast \033[38;5;226menhanced\033[0m attack!")
 		w.attackWith(target, w.strength*3)
 	} else if roll < 70 {
 		fmt.Printf("wizard cast \033[38;5;226mfireball\033[0m!")
-		dmg := rand.Float32() * scale(30, 1.75)
+		dmg := rand.Float32() * scale(100, 4)
 		w.attackWith(target, dmg)
 	} else if roll < 85 {
 		fmt.Printf("wizard cast \033[38;5;226mlightning\033[0m!")
-		dmg := 10 + rand.Float32()*scale(20, 1)
+		dmg := 40 + rand.Float32()*scale(75, 2)
 		w.attackWith(target, dmg)
 	} else if roll < 90 {
 		fmt.Printf("wizard summons \033[38;5;226mmeteor\033[0m!")
-		w.attackWith(target, 45)
+		w.attackWith(target, 120)
 	} else {
 		fmt.Printf("wizard cannot cast, he use his staff instead!")
 		w.attackWith(target, w.strength)
@@ -129,9 +134,9 @@ type changeling struct {
 func newChangeling() entity {
 	attr := attributes{
 		name:     "changeling",
-		hp:       80,
-		hpcap:    80,
-		defense:  1,
+		hp:       100,
+		hpcap:    100,
+		defense:  scale(100, 1), // prevent instant kill before morph
 		strength: 1,
 		effects:  make(map[string]int),
 	}
@@ -160,10 +165,11 @@ type vampire struct {
 func newVampire() entity {
 	attr := attributes{
 		name:     "vampire",
-		hp:       scale(80, 10),
-		hpcap:    scale(80, 10),
-		defense:  scale(3, 0.13),
-		strength: scale(10, 1.9),
+		hp:       scale(190, 23.4),
+		hpcap:    scale(190, 23.4),
+		defense:  scale(14, 1.9),
+		strength: scale(43, 3.4),
+		agility:  scale(10, 0.029),
 		effects:  make(map[string]int),
 	}
 	return &vampire{attr}
@@ -175,7 +181,7 @@ func (v *vampire) attack(target entity) {
 	if roll < 8 {
 		fmt.Print(fail)
 		fmt.Printf("vampire get exposed to sunlight! getting")
-		v.damage(v.hp * 0.13)
+		v.damage(v.defense + v.hp*0.1)
 		return
 	}
 
@@ -187,7 +193,7 @@ func (v *vampire) attack(target entity) {
 		dmg := v.strength + oldhp*0.01
 		v.attackWith(target, dmg)
 
-		heal := (oldhp-target.attr().hp)/2 + 4
+		heal := (oldhp-target.attr().hp)/2 + 15
 		v.hp = min(v.hp+heal, v.hpcap)
 	} else if roll < 70 {
 		fmt.Printf("vampire bites down, giving \033[38;5;226mpoison\033[0m!")
@@ -210,10 +216,11 @@ type demon struct {
 func newDemon() entity {
 	attr := attributes{
 		name:     "demon",
-		hp:       scale(112, 16),
-		hpcap:    scale(112, 16),
-		defense:  scale(4, 0.28),
-		strength: scale(10, 1.8),
+		hp:       scale(212, 31),
+		hpcap:    scale(212, 31),
+		defense:  scale(20, 2.5),
+		strength: scale(45, 3.8),
+		agility:  scale(8.5, 0.27),
 		effects:  make(map[string]int),
 	}
 	return &demon{attr}
@@ -230,7 +237,7 @@ func (d *demon) attack(target entity) {
 			"demon conjure \033[38;5;226mlife draining\033[0m magic!",
 		}
 
-		drain := d.strength + target.attr().hp*0.07
+		drain := d.strength + target.attr().hp*0.04
 		hp := max(target.attr().hp-drain, 0)
 		target.setHP(hp)
 		fmt.Printf(messages[rand.IntN(len(messages))])
@@ -263,13 +270,15 @@ type shardling struct {
 func newShardling() entity {
 	attr := attributes{
 		name:     "shardling",
-		hp:       scale(60, 6.4),
-		hpcap:    scale(60, 6.4),
-		defense:  scale(11, 0.4),
-		strength: scale(8, 1.12),
+		hp:       scale(100, 10),
+		hpcap:    scale(100, 10),
+		defense:  scale(40, 2.65),
+		strength: scale(27, 2.42),
+		agility:  scale(6, 0.18),
 		effects:  make(map[string]int),
 	}
 
+	attr.effects["reflect"] = 99
 	return &shardling{attr}
 }
 
@@ -277,31 +286,20 @@ func (s *shardling) attack(target entity) {
 	fmt.Print(success)
 	roll := roll()
 
-	if roll < 20 {
+	if roll < 40 {
 		fmt.Printf("shardling rams itself onto you!")
 		s.attackWith(target, s.strength)
-	} else if roll < 40 {
+	} else if roll < 50 {
 		fmt.Printf("shardling strikes with its crystal limbs!")
 		s.attackWith(target, s.strength*1.1)
 	} else if roll < 80 {
 		fmt.Printf("shardling launched volley of shards!")
-		dmg := rand.Float32()*10 + s.strength
+		dmg := rand.Float32()*20 + s.strength
 		s.attackWith(target, dmg)
 	} else {
 		fmt.Printf("shardling impales you with crystal spike!")
-		s.attackWith(target, s.strength+20)
+		s.attackWith(target, s.strength*1.25)
 	}
-}
-
-func (s *shardling) damage(n float32) {
-	hp := s.hp
-	s.attributes.damage(n)
-	reflect := (hp - s.hp) * 0.3
-	// quick & dirty way by accessing the global var.
-	// i dont want to modify the interface just for this one.
-	// and this cant self-target.
-	fmt.Print("  reflected:")
-	player.damage(reflect)
 }
 
 type genie struct {
@@ -311,10 +309,11 @@ type genie struct {
 func newGenie() entity {
 	attr := attributes{
 		name:     "genie",
-		hp:       scale(100, 12),
-		hpcap:    scale(100, 12),
-		defense:  scale(2, 0.14),
-		strength: scale(7, 0.85),
+		hp:       scale(200, 20),
+		hpcap:    scale(200, 20),
+		defense:  scale(17, 2.22),
+		strength: scale(36, 3.13),
+		agility:  scale(8, 0.275),
 		effects:  make(map[string]int),
 	}
 
@@ -336,19 +335,19 @@ func (g *genie) attack(target entity) {
 	}
 
 	if roll < 5 {
-		curse := 0.5 + rand.Float32()*4
+		curse := 1 + rand.Float32()*10
 		attr.hpcap = max(50, attr.hpcap-curse)
 
 		fmt.Print("genie placed a \033[38;5;226mcurse mark\033[0m! ")
 		fmt.Printf("hp cap reduced by %.1f\n", curse)
 	} else if roll < 10 {
-		curse := 0.1 + rand.Float32()*1
+		curse := 0.25 + rand.Float32()*1.5
 		attr.strength = max(5, attr.strength-curse)
 
 		fmt.Print("genie placed a \033[38;5;226mcurse mark\033[0m! ")
 		fmt.Printf("strength reduced by %.1f\n", curse)
 	} else if roll < 15 {
-		curse := 0.1 + rand.Float32()*0.8
+		curse := 0.1 + rand.Float32()*1
 		attr.defense = max(1, attr.defense-curse)
 
 		fmt.Print("genie placed a \033[38;5;226mcurse mark\033[0m! ")
@@ -368,11 +367,11 @@ func (g *genie) attack(target entity) {
 		g.effects["force-field"] = 5
 	} else if roll < 60 {
 		fmt.Printf("genie cast a \033[38;5;226msandstorm\033[0m!")
-		dmg := g.strength*0.5 + scale(25, 0.3)
+		dmg := g.strength*0.5 + 40
 		g.attackWith(target, dmg)
 	} else if roll < 85 {
 		fmt.Printf("genie blast you with magical energy!")
-		dmg := g.strength*0.8 + 15
+		dmg := g.strength * 1.13
 		g.attackWith(target, dmg)
 	} else {
 		fmt.Printf("genie reach out for a punch!")
@@ -387,10 +386,11 @@ type celestial struct {
 func newCelestial() entity {
 	attr := attributes{
 		name:     "the celestial being",
-		hp:       scale(140, 20),
-		hpcap:    scale(140, 20),
-		defense:  0,
-		strength: scale(9, 1),
+		hp:       scale(300, 40),
+		hpcap:    scale(300, 40),
+		defense:  scale(7.5, 0.5),
+		strength: scale(41, 3),
+		agility:  scale(7, 0.28),
 		effects:  make(map[string]int),
 	}
 
@@ -437,7 +437,7 @@ func newShapeshift() entity {
 		name:     "shapeshift",
 		hp:       80,
 		hpcap:    80,
-		defense:  1,
+		defense:  scale(100, 1), // prevent instant kill before morph
 		strength: 1,
 		effects:  make(map[string]int),
 	}
@@ -448,10 +448,10 @@ func newShapeshift() entity {
 func (s *shapeshift) attack(target entity) {
 	if !s.mimic {
 		fmt.Print(success)
-		s.hp = target.attr().hp * 1.5
-		s.hpcap = target.attr().hpcap * 1.5
-		s.strength = target.attr().strength * 1.5
-		s.defense = target.attr().defense * 1.5
+		s.hp = target.attr().hp * 1.25
+		s.hpcap = target.attr().hpcap * 1.25
+		s.strength = target.attr().strength * 1.25
+		s.defense = target.attr().defense * 1.25
 		s.mimic = true
 		fmt.Println("shapeshift \033[38;5;226mmorph\033[0m itself!")
 		return
@@ -467,10 +467,11 @@ type undead struct {
 func newUndead() entity {
 	attr := attributes{
 		name:     "undead",
-		hp:       scale(78, 9),
-		hpcap:    scale(78, 9),
-		defense:  scale(2, 0.15),
-		strength: scale(9, 1),
+		hp:       scale(181, 20.8),
+		hpcap:    scale(181, 20.8),
+		defense:  scale(16.7, 2.3),
+		strength: scale(38, 3.125),
+		agility:  scale(5, 0.25),
 		effects:  make(map[string]int),
 	}
 	return &undead{attr}
@@ -492,7 +493,7 @@ func (u *undead) attack(target entity) {
 		u.attackWith(target, strength*0.4)
 	} else if roll < 28 {
 		fmt.Print("the undead calls in fellow undead from underground!")
-		dmg := 5 + rand.Float32()*scale(5, 1)
+		dmg := strength + rand.Float32()*scale(30, 4)
 		u.attackWith(target, dmg)
 	} else if roll < 35 {
 		fmt.Print("the undead bites down on the target's leg!")
@@ -507,5 +508,97 @@ func (u *undead) attack(target entity) {
 
 		fmt.Print(messages[rand.IntN(len(messages))])
 		u.attackWith(target, strength)
+	}
+}
+
+type scorpion struct {
+	attributes
+}
+
+func newScorpion() entity {
+	attr := attributes{
+		name:     "scorpion",
+		hp:       scale(150, 12),
+		hpcap:    scale(150, 12),
+		defense:  scale(15, 1.95),
+		strength: scale(49, 3.75),
+		agility:  scale(9.2, 0.29),
+		effects:  make(map[string]int),
+	}
+	return &scorpion{attr}
+}
+
+func (s *scorpion) attack(target entity) {
+	fmt.Print(success)
+	roll := roll()
+	// ignore 30% def
+	strength := s.strength + target.attr().defense*0.3
+
+	if roll < 24 {
+		messages := []string{
+			"the scorpion charges forward and use its \033[38;5;226mstinger\033[0m",
+			"the scorpion stungs hard, injecting deadly \033[38;5;226mvenom\033[0m",
+			"the scorpion reach out to inject \033[38;5;226mvenom\033[0m",
+			"the scorpion emits \033[38;5;226mpoisonous\033[0m gas",
+		}
+
+		fmt.Print(messages[rand.IntN(len(messages))])
+		target.attr().effects["poisoned severe"] = 3
+		s.attackWith(target, strength)
+		return
+	}
+
+	messages := []string{
+		"the scorpion lashes out with its tail",
+		"the scorpion impales you from underground",
+		"the scorpion pinches you with its massive claws",
+	}
+
+	fmt.Print(messages[rand.IntN(len(messages))])
+	s.attackWith(target, strength)
+}
+
+type goblin struct {
+	attributes
+}
+
+func newGoblin() entity {
+	attr := attributes{
+		name:     "goblin",
+		hp:       scale(130, 11),
+		hpcap:    scale(130, 11),
+		defense:  scale(10, 1),
+		strength: scale(44, 3.47),
+		agility:  scale(20, 0.4),
+		effects:  make(map[string]int),
+	}
+	return &goblin{attr}
+}
+
+func (g *goblin) attack(target entity) {
+	fmt.Print(success)
+	roll := roll()
+
+	if roll < 12 {
+		fmt.Print("the goblin blows a puff of \033[38;5;226mmysterious powder\033[0m!")
+		target.attr().effects["confused"] = 3
+		g.attackWith(target, g.strength*0.45)
+	} else if roll < 24 {
+		fmt.Print("the goblin leaps into the air and bring its club down!")
+		g.attackWith(target, g.strength*1.25)
+	} else if roll < 36 {
+		fmt.Print("the goblin strikes rapidly!")
+		g.attackWith(target, g.strength*1.1)
+	} else {
+		messages := []string{
+			"the goblin stabs with a crude spear",
+			"the goblin hurls shards of broken glass",
+			"the goblin launches itself wildly",
+			"the goblin swung its crude club",
+			"the goblin's rusty dagger reach out for a slash",
+		}
+
+		fmt.Print(messages[rand.IntN(len(messages))])
+		g.attackWith(target, g.strength)
 	}
 }

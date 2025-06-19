@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand/v2"
 	"os"
 	"strings"
 	"time"
 )
 
-var rolltest = -1
+var rolltest = -1 // for unit tests
 
 func clearScreen() {
 	fmt.Printf("\033[H")
@@ -54,6 +55,13 @@ func roll() int {
 	return rand.IntN(100)
 }
 
+// quick fix floating issue
+func equal(a, b float32) bool {
+	x := math.Round(float64(a) * 100)
+	y := math.Round(float64(b) * 100)
+	return x == y
+}
+
 type savedata struct {
 	Stage  int     `json:"stage"`
 	Perk   int     `json:"perk"`
@@ -63,6 +71,7 @@ type savedata struct {
 	Hpc    float32 `json:"hpc"`
 	Str    float32 `json:"str"`
 	Def    float32 `json:"def"`
+	Agi    float32 `json:"agi"`
 	En     int     `json:"en"`
 	Enc    int     `json:"enc"`
 }
@@ -77,6 +86,7 @@ func save() error {
 		Hpc:    player.hpcap,
 		Str:    player.strength,
 		Def:    player.defense,
+		Agi:    player.agility,
 		En:     player.energy,
 		Enc:    player.energycap,
 	}
@@ -115,6 +125,7 @@ func load() error {
 	load.hpcap = data.Hpc
 	load.strength = data.Str
 	load.defense = data.Def
+	load.agility = data.Agi
 	load.energy = data.En
 	load.energycap = data.Enc
 	load.effects = make(map[string]int)

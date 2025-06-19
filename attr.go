@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand/v2"
+)
 
 type entity interface {
 	attack(entity)
@@ -11,7 +14,7 @@ type entity interface {
 	applyEffects()
 	// gets data like HP, strength...
 	attr() attributes
-	// niche case for demon attack that ignore defense
+	// niche case for attacks that ignore both defense & effects
 	setHP(float32)
 	// takes attack dmg and log it. minimal dmg is 1.
 	// defensive effects will be applied here.
@@ -24,15 +27,22 @@ type attributes struct {
 	hpcap    float32
 	strength float32
 	defense  float32
+	agility  float32
 	effects  map[string]int //name - turn duration
 }
 
-func (attr attributes) attack(target entity) {
+func (attr *attributes) attack(target entity) {
 	fmt.Printf("%s%s attacked!", success, attr.name)
 	attr.attackWith(target, attr.strength)
 }
 
-func (attr attributes) attackWith(target entity, dmg float32) {
+func (attr *attributes) attackWith(target entity, dmg float32) {
+	dodge := target.attr().agility*0.5 - attr.agility*0.15
+	if dodge > rand.Float32()*100 {
+		fmt.Println(" \033[38;5;226mmiss\033[0m")
+		return
+	}
+
 	if attr.effects["strengthen"] > 0 {
 		dmg += dmg * 0.1
 	}
@@ -41,30 +51,41 @@ func (attr attributes) attackWith(target entity, dmg float32) {
 		dmg -= dmg * 0.13
 	}
 
+	crit := attr.agility - target.attr().agility*0.25
+	if crit > rand.Float32()*100 {
+		fmt.Print(" \033[38;5;226mcrit\033[0m")
+		dmg *= 1.75
+	}
+
 	target.damage(dmg)
+
+	if target.attr().effects["reflect"] > 0 {
+		fmt.Print("  reflected:")
+		attr.damage(dmg * 0.3)
+	}
 }
 
 func (attr *attributes) applyEffects() {
+	// some effects ignore half defense because they are too high
+
 	if attr.effects["poisoned"] > 0 {
-		dmg := 2 + attr.hp*0.07
-		fmt.Printf("  %s took \033[38;5;198m%.1f\033[0m from poison\n", attr.name, dmg)
-		attr.hp -= dmg // poison ignore defense
+		fmt.Printf("  %s suffer from poison:", attr.name)
+		attr.damage(attr.defense*0.5 + attr.hp*0.1 + 10)
 	}
 
 	if attr.effects["poisoned severe"] > 0 {
-		dmg := 2 + attr.hp*0.16
-		fmt.Printf("  %s took \033[38;5;198m%.1f\033[0m from severe poison\n", attr.name, dmg)
-		attr.hp -= dmg
+		fmt.Printf("  %s suffer from severe poison:", attr.name)
+		attr.damage(attr.defense*0.5 + attr.hp*0.2 + 20)
 	}
 
 	if attr.effects["burning"] > 0 {
 		fmt.Printf("  %s suffer from burning:", attr.name)
-		attr.damage(5 + attr.hpcap*0.04)
+		attr.damage(attr.defense*0.5 + attr.hpcap*0.06 + 10)
 	}
 
 	if attr.effects["burning severe"] > 0 {
 		fmt.Printf("  %s suffer from severe burning:", attr.name)
-		attr.damage(5 + attr.hpcap*0.10)
+		attr.damage(attr.defense*0.5 + attr.hpcap*0.12 + 20)
 	}
 
 	if attr.effects["heal aura"] > 0 {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"testing"
 )
 
@@ -26,8 +25,8 @@ func TestKnight(t *testing.T) {
 			t.Error("should buff defense")
 		}
 
-		if knight.hp < 5 {
-			t.Error("should heal atleast 5 hp")
+		if knight.hp < 20 {
+			t.Error("should heal atleast 20 hp")
 		}
 	})
 
@@ -103,10 +102,16 @@ func TestWizard(t *testing.T) {
 
 	t.Run("confuse", func(t *testing.T) {
 		rolltest = 30
+		p.hp = 100
 		wizard.attack(p)
 
 		if p.effects["confused"] != 5 {
 			t.Errorf("should get confused effect for 5 turns, got %d", p.effects["confused"])
+		}
+
+		dmg := wizard.strength * 0.6
+		if !equal(dmg, 100-p.hp) {
+			t.Errorf("damage should be %.1f (60%% strength), got %.1f", dmg, 100-p.hp)
 		}
 	})
 
@@ -123,11 +128,11 @@ func TestWizard(t *testing.T) {
 
 	t.Run("summon meteor", func(t *testing.T) {
 		rolltest = 85
-		p.hp = 100
+		p.hp = 200
 		wizard.attack(p)
 
-		if 100-p.hp != 45 {
-			t.Errorf("damage should be 45, got %.1f", 100-p.hp)
+		if 200-p.hp != 120 {
+			t.Errorf("damage should be 120, got %.1f", 100-p.hp)
 		}
 	})
 
@@ -170,6 +175,10 @@ func TestChangeling(t *testing.T) {
 	if attr.defense != p.defense*0.75 {
 		t.Errorf("should copy defense by 75%%, want %.1f, got: %.1f", p.defense*0.75, attr.defense)
 	}
+
+	if attr.agility != p.agility*0.75 {
+		t.Errorf("should copy agility by 75%%, want %.1f, got: %.1f", p.agility*0.75, attr.agility)
+	}
 }
 
 func TestVampire(t *testing.T) {
@@ -186,10 +195,12 @@ func TestVampire(t *testing.T) {
 
 	t.Run("exposed to sunlight", func(t *testing.T) {
 		rolltest = 1
+		vampire.defense = 999
 		vampire.attack(p)
+		vampire.defense = 0
 
-		if 100-vampire.hp != 13 {
-			t.Errorf("damage should be 13 (13%% of hp), got %.1f", 100-vampire.hp)
+		if 100-vampire.hp != 10 {
+			t.Errorf("damage should be 10 (10%% of hp and ignore defense), got %.1f", 100-vampire.hp)
 		}
 	})
 
@@ -203,9 +214,9 @@ func TestVampire(t *testing.T) {
 			t.Errorf("damage should be %.1f (100%% strength + 1%% target hp), got %.1f", dmg, 100-p.hp)
 		}
 
-		heal := dmg/2 + 4
+		heal := dmg/2 + 15
 		if vampire.hp != heal {
-			t.Errorf("should heal by %.1f (half the damage + 4), got %.1f", heal, vampire.hp)
+			t.Errorf("should heal by %.1f (half the damage + 15), got %.1f", heal, vampire.hp)
 		}
 	})
 
@@ -251,8 +262,6 @@ func TestVampire(t *testing.T) {
 func TestDemon(t *testing.T) {
 	p := &Player{}
 	p.perk = -1
-	p.hp = 1000
-	p.hpcap = 1000
 	p.effects = make(map[string]int)
 
 	var demon demon
@@ -260,13 +269,15 @@ func TestDemon(t *testing.T) {
 	demon.strength = 10
 
 	t.Run("soul absorption", func(t *testing.T) {
+		p.hp = 1000
+		p.hpcap = 1000
 		p.defense = 99999
 		rolltest = 1
 		demon.attack(p)
 
-		dmg := demon.strength + 70
+		dmg := demon.strength + 40
 		if dmg != 1000-p.hp {
-			t.Errorf("damage should be %.1f (take 7%% hpcap and ignore defense), got %.1f", dmg, 1000-p.hp)
+			t.Errorf("damage should be %.1f (take 4%% hp and ignore defense), got %.1f", dmg, 1000-p.hp)
 		}
 	})
 
@@ -310,16 +321,6 @@ func TestShardling(t *testing.T) {
 	shardling.strength = 10
 	shardling.hp = 100
 
-	t.Run("damage reflection", func(t *testing.T) {
-		player = p // needed for this
-		p.attack(shardling)
-		dmg := p.strength * 0.3
-
-		if dmg != 100-p.hp {
-			t.Errorf("reflected damage should be %.1f (30%% of the damage), got %.1f", dmg, 100-p.hp)
-		}
-	})
-
 	t.Run("ram", func(t *testing.T) {
 		p.hp = 100
 		rolltest = 1
@@ -333,7 +334,7 @@ func TestShardling(t *testing.T) {
 
 	t.Run("crystal limbs", func(t *testing.T) {
 		p.hp = 100
-		rolltest = 20
+		rolltest = 40
 		shardling.attack(p)
 
 		dmg := shardling.strength * 1.1
@@ -347,9 +348,9 @@ func TestShardling(t *testing.T) {
 		rolltest = 80
 		shardling.attack(p)
 
-		dmg := 20 + shardling.strength
+		dmg := shardling.strength * 1.25
 		if dmg != 100-p.hp {
-			t.Errorf("damage should be %.1f (100%% strength + 20), got %.1f", dmg, 100-p.hp)
+			t.Errorf("damage should be %.1f (125%% strength), got %.1f", dmg, 100-p.hp)
 		}
 	})
 }
@@ -434,9 +435,9 @@ func TestGenie(t *testing.T) {
 		rolltest = 38
 		genie.attack(p)
 
-		dmg := 25 + genie.strength*0.5
+		dmg := genie.strength*0.5 + 40
 		if !equal(dmg, 100-p.hp) {
-			t.Errorf("damage should be %.1f (50%% strength + 25), got %.1f", dmg, 100-p.hp)
+			t.Errorf("damage should be %.1f (50%% strength + 40), got %.1f", dmg, 100-p.hp)
 		}
 	})
 
@@ -445,9 +446,9 @@ func TestGenie(t *testing.T) {
 		rolltest = 60
 		genie.attack(p)
 
-		dmg := 15 + genie.strength*0.8
+		dmg := genie.strength * 1.13
 		if !equal(dmg, 100-p.hp) {
-			t.Errorf("damage should be %.1f (80%% strength + 15), got %.1f", dmg, 100-p.hp)
+			t.Errorf("damage should be %.1f (113%% strength), got %.1f", dmg, 100-p.hp)
 		}
 	})
 
@@ -526,20 +527,24 @@ func TestShapeshift(t *testing.T) {
 
 	attr := shapeshift.attr()
 
-	if attr.hp != p.hp*1.5 {
-		t.Errorf("should copy hp by 150%%, want %.1f, got: %.1f", p.hp*1.5, attr.hp)
+	if attr.hp != p.hp*1.25 {
+		t.Errorf("should copy hp by 125%%, want %.1f, got: %.1f", p.hp*1.25, attr.hp)
 	}
 
-	if attr.hpcap != p.hpcap*1.5 {
-		t.Errorf("should copy hpcap by 150%%, want %.1f, got: %.1f", p.hpcap*1.5, attr.hpcap)
+	if attr.hpcap != p.hpcap*1.25 {
+		t.Errorf("should copy hpcap by 125%%, want %.1f, got: %.1f", p.hpcap*1.25, attr.hpcap)
 	}
 
-	if attr.strength != p.strength*1.5 {
-		t.Errorf("should copy strength by 150%%, want %.1f, got: %.1f", p.strength*1.5, attr.strength)
+	if attr.strength != p.strength*1.25 {
+		t.Errorf("should copy strength by 125%%, want %.1f, got: %.1f", p.strength*1.25, attr.strength)
 	}
 
-	if attr.defense != p.defense*1.5 {
-		t.Errorf("should copy defense by 150%%, want %.1f, got: %.1f", p.defense*1.5, attr.defense)
+	if attr.defense != p.defense*1.25 {
+		t.Errorf("should copy defense by 125%%, want %.1f, got: %.1f", p.defense*1.25, attr.defense)
+	}
+
+	if attr.agility != p.agility*1.25 {
+		t.Errorf("should copy agility by 125%%, want %.1f, got: %.1f", p.agility*1.25, attr.agility)
 	}
 }
 
@@ -548,7 +553,6 @@ func TestUndead(t *testing.T) {
 	p.hp = 100
 	p.perk -= 1
 	p.hpcap = 100
-	p.strength = 10
 	p.effects = make(map[string]int)
 
 	var undead undead
@@ -603,9 +607,100 @@ func TestUndead(t *testing.T) {
 	})
 }
 
-// quick fix floating issue
-func equal(n, n2 float32) bool {
-	x := math.Round(float64(n) * 100)
-	y := math.Round(float64(n2) * 100)
-	return x == y
+func TestScorpion(t *testing.T) {
+	p := &Player{}
+	p.hp = 100
+	p.perk -= 1
+	p.hpcap = 100
+	p.defense = 10
+	p.effects = make(map[string]int)
+
+	var scorpion scorpion
+	scorpion.strength = 20
+
+	t.Run("basic", func(t *testing.T) {
+		rolltest = 1
+		scorpion.attack(p)
+
+		dmg := 20 - 10 + p.defense*0.3
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (ignore 30%% defense), got %.1f", dmg, 100-p.hp)
+		}
+
+		p.hp = 100
+		p.defense = 100
+		scorpion.strength = 100
+		scorpion.attack(p)
+
+		if p.hp != 70 {
+			t.Errorf("damage should be 30 (ignore 30%% defense), got %.1f", 100-p.hp)
+		}
+	})
+
+	t.Run("venom", func(t *testing.T) {
+		rolltest = 24
+		scorpion.attack(p)
+
+		if p.effects["poisoned severe"] != 3 {
+			t.Errorf("should give poisoned severe effect for 3 turns, got %d", p.effects["poisoned severe"])
+		}
+	})
+}
+
+func TestGoblin(t *testing.T) {
+	p := &Player{}
+	p.hp = 100
+	p.perk -= 1
+	p.hpcap = 100
+	p.effects = make(map[string]int)
+
+	var goblin goblin
+	goblin.strength = 10
+
+	t.Run("powder", func(t *testing.T) {
+		rolltest = 1
+		goblin.attack(p)
+
+		if p.effects["confused"] != 3 {
+			t.Errorf("should get confused effect for 3 turns, got %d", p.effects["confused"])
+		}
+
+		dmg := goblin.strength * 0.45
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (45%% strentgh), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("leap", func(t *testing.T) {
+		p.hp = 100
+		rolltest = 12
+		goblin.attack(p)
+
+		dmg := goblin.strength * 1.25
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (125%% strentgh), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("rapid strike", func(t *testing.T) {
+		p.hp = 100
+		rolltest = 24
+		goblin.attack(p)
+
+		dmg := goblin.strength * 1.1
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (110%% strentgh), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("basic", func(t *testing.T) {
+		p.hp = 100
+		rolltest = 36
+		goblin.attack(p)
+
+		dmg := goblin.strength
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% defense), got %.1f", dmg, 100-p.hp)
+		}
+	})
 }

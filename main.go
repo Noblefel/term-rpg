@@ -47,21 +47,24 @@ func selectPerks() int {
 	fmt.Println("------------------------------------------")
 
 	return vivi.Choices(
-		"[1] 🛡️  Resilient : increase overall defense",
-		"[2] ⚔️  Havoc      : +20%% damage, but low starting gold & energy cap",
+		"[1] 🛡️  Resilient  : increase overall defense",
+		"[2] ⚔️  Havoc      : +20% damage, but low starting gold & energy cap",
 		"[3] 🐻 Berserk    : more powerful the lower your hp is",
 		"[4] 🐇 Ingenious  : +2 energy cap, skill cooldown reduced by 2",
-		"[5] 🍹 Poisoner   : give severe poisoning effect at the start of battle",
-		"[6] ⚰️  Deadman   : give weaken effect at the start of battle",
+		"[5] 🍹 Poisoner   : inflict poisoning effect at the start of battle",
+		"[6] ⚰️  Deadman    : inflict weaken effect at the start of battle",
 		"[7] 🏃 Survivor   : almost always succeed when fleeing",
+		"[8] 🎃 Insanity   : it can either go really well or really bad",
 	)
 }
 
 func menuPoints() {
 	var (
 		points    = 10
-		tempdef   = player.defense
 		temphpcap = player.hpcap
+		tempstr   = player.strength
+		tempdef   = player.defense
+		tempagi   = player.agility
 		tempencap = player.energycap
 	)
 
@@ -72,20 +75,22 @@ func menuPoints() {
 		fmt.Printf("HP cap     : %.1f\n", player.hpcap)
 		fmt.Printf("Strength   : %.1f\n", player.strength)
 		fmt.Printf("Defense    : %.1f\n", player.defense)
+		fmt.Printf("Agility    : %.1f\n", player.agility)
 		fmt.Printf("Energy cap : %.d\n", player.energycap)
 		fmt.Println("------------------------------------------")
 		fmt.Printf("\033[s")
 
 		choice := vivi.Choices(
-			"increase HP cap by 3",
-			"increase strength by 0.25",
-			"increase defense by 0.25",
+			"increase HP cap by 7.5",
+			"increase strength by 1",
+			"increase defense by 1",
+			"increase agility by 1",
 			"increase energy cap by 1 (3 points)",
 			"Reset",
 			"Done",
 		)
 
-		if choice < 3 && points == 0 || choice == 3 && points < 3 {
+		if choice < 4 && points == 0 || choice == 4 && points < 3 {
 			fmt.Print("\033[u\033[0J")
 			fmt.Println("\033[38;5;196mnot enough points\033[0m")
 			vivi.Choices("continue")
@@ -94,24 +99,28 @@ func menuPoints() {
 
 		switch choice {
 		case 0:
-			player.hpcap += 3
+			player.hpcap += 7.5
 			points--
 		case 1:
-			player.strength += 0.25
+			player.strength++
 			points--
 		case 2:
-			player.defense += 0.25
+			player.defense++
 			points--
 		case 3:
+			player.agility++
+			points--
+		case 4:
 			player.energycap++
 			points -= 3
-		case 4:
+		case 5:
 			points = 10
 			player.hpcap = temphpcap
+			player.strength = tempstr
 			player.defense = tempdef
-			player.strength = 20
+			player.agility = tempagi
 			player.energycap = tempencap
-		case 5:
+		case 6:
 			player.hp = player.hpcap
 			player.energy = player.energycap
 			return
@@ -140,21 +149,7 @@ func menuMain() {
 
 		switch choice {
 		case 0:
-			enemy := randomEnemy()
-
-			if player.perk == 4 {
-				enemy.attr().effects["poisoned severe"] = 3
-			}
-
-			if player.perk == 5 {
-				enemy.attr().effects["weakened"] = 3
-			}
-
-			if _, ok := enemy.(*undead); ok {
-				player.effects["weakened"] = 3
-			}
-
-			menuBattle(enemy, false)
+			menuBattle(spawn(), false)
 		case 1:
 			exploreDeepForest()
 		case 2:
@@ -181,9 +176,10 @@ func menuAttributes() {
 	fmt.Println("----------")
 
 	var (
-		hpcap     = bars(40, player.hpcap, 300)
-		strength  = bars(40, player.strength, 80)
-		defense   = bars(40, player.defense, 30)
+		hpcap     = bars(40, player.hpcap, 750)
+		strength  = bars(40, player.strength, 400)
+		defense   = bars(40, player.defense, 150)
+		agility   = bars(40, player.agility, 100)
 		energycap = bars(40, float32(player.energycap), 40)
 	)
 
@@ -195,6 +191,9 @@ func menuAttributes() {
 
 	fmt.Printf("Defense    :")
 	fmt.Printf("%s %.1f\n", "\033[38;5;83m"+defense[0]+"\033[0m"+defense[1], player.defense)
+
+	fmt.Printf("Agility    :")
+	fmt.Printf("%s %.1f\n", "\033[38;5;83m"+agility[0]+"\033[0m"+agility[1], player.agility)
 
 	fmt.Printf("Energy cap :")
 	fmt.Printf("%s %d\n", "\033[38;5;83m"+energycap[0]+"\033[0m"+energycap[1], player.energycap)
@@ -339,15 +338,51 @@ func menuBattle(enemy entity, exploring bool) {
 	defer clear(player.effects)
 	defer clear(enemy.attr().effects)
 
+	if player.perk == 4 {
+		enemy.attr().effects["poisoned"] = 6
+	}
+
+	if player.perk == 5 {
+		enemy.attr().effects["weakened"] = 3
+	}
+
+	if _, ok := enemy.(*undead); ok {
+		player.effects["weakened"] = 3
+	}
+
 	for {
 		clearScreen()
 		fmt.Println("\033[1mYou\033[0m")
-		fmt.Printf("Health : %s %.1f\n", player.attr().hpbar(), player.hp)
-		fmt.Printf("Energy : %s %d\n", player.energybar(), player.energy)
+		fmt.Printf("health : %s %.1f\n", player.attr().hpbar(), player.hp)
+		fmt.Printf("energy : %s %d\n", player.energybar(), player.energy)
 		fmt.Println("--------")
 		fmt.Printf("\033[1m%s\033[0m\n", enemy.attr().name)
-		fmt.Printf("Health : %s %.1f\n", enemy.attr().hpbar(), enemy.attr().hp)
+		fmt.Printf("health : %s %.1f\n", enemy.attr().hpbar(), enemy.attr().hp)
 		fmt.Println("--------")
+
+		if player.perk == 7 {
+			roll := roll()
+
+			if roll < 1 {
+				fmt.Print("  \033[38;5;226minsanity\033[0m: you somehow annihilate the enemy!")
+				enemy.setHP(0)
+			} else if roll < 10 {
+				player.effects["stunned"] = 1
+				fmt.Println("  \033[38;5;226minsanity\033[0m: your mind is in disarray")
+			} else if roll < 17 {
+				n := -0.5 + rand.Float32()*1
+				player.hpcap = max(50, player.hpcap+n)
+				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f hp cap\n", n)
+			} else if roll < 24 {
+				n := -0.25 + rand.Float32()*0.5
+				player.strength = max(5, player.strength+n)
+				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f strength\n", n)
+			} else if roll < 31 {
+				n := -0.25 + rand.Float32()*0.5
+				player.defense = max(1, player.defense+n)
+				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f defense\n", n)
+			}
+		}
 
 		player.applyEffects()
 
@@ -413,11 +448,11 @@ func menuPlayerActions(enemy entity) {
 
 	for {
 		choice := vivi.Choices(
-			"[1] ⚔️  Attack",
-			"[2] 🔥 Skills",
-			"[3] 🧰 Items",
-			"[4] 🏃 Flee",
-			"[5] ⌛ Skip",
+			"[1] attack",
+			"[2] skills",
+			"[3] items",
+			"[4] flee",
+			"[5] skip",
 		)
 		fmt.Printf("\033[u\033[0J")
 
@@ -459,8 +494,12 @@ func menuPlayerActions(enemy entity) {
 				fmt.Println("warning, you are \033[38;5;226mconfused\033[0m! energy cost increased by 1")
 			}
 
-			if player.perk == 2 && player.hp/player.hpcap <= 0.15 {
+			if player.perk == 2 && player.hp/player.hpcap <= 0.2 {
 				fmt.Println("berserk perk bonus! cooldown decreased by 1")
+			}
+
+			if player.perk == 7 {
+				fmt.Println("insanity perk! cooldown will be randomized")
 			}
 
 			choices = append(choices, "cancel")
@@ -471,14 +510,14 @@ func menuPlayerActions(enemy entity) {
 				return
 			}
 		case 2:
-			fmt.Println("\033[38;5;196mNot implemented\033[0m")
+			fmt.Println("\033[38;5;196mnot implemented\033[0m")
 		case 3:
 			fmt.Printf("attempting to escape... ")
 			timer(1700)
 			player.flee(enemy)
 			return
 		case 4:
-			fmt.Println("  You decided to do nothing")
+			fmt.Println("  you decided to do nothing")
 			return
 		}
 	}
@@ -509,17 +548,17 @@ func exploreDeepForest() {
 			fmt.Println("Jackpot! you found a \033[38;5;226mstash\033[0m of gold!")
 		} else if n < 24 {
 			fmt.Print(success)
-			heal := 1 + rand.Float32()*5
+			heal := 5 + rand.Float32()*5
 			player.hp = min(player.hp+heal, player.hpcap)
 			fmt.Printf("You eat some berries, ")
 			fmt.Printf("recover \033[38;5;83m%.1f\033[0m hp\n", heal)
 		} else if n < 28 {
 			fmt.Print(fail)
 			fmt.Printf("You eat some poisounus berries,")
-			player.damage(player.hpcap * 0.07)
+			player.damage(player.hpcap * 0.04)
 		} else if n < 31 {
 			fmt.Print(success)
-			heal := 4 + rand.Float32()*5
+			heal := 10 + rand.Float32()*10
 			player.hp = min(player.hp+heal, player.hpcap)
 			fmt.Printf("You rest by a campfire, ")
 			fmt.Printf("recover \033[38;5;83m%.1f\033[0m hp\n", heal)
@@ -535,7 +574,7 @@ func exploreDeepForest() {
 			fmt.Print(fail)
 			fmt.Print("You fell off a cliff, +\033[38;5;83m0.12\033[0m defense but took")
 			player.defense += 0.12
-			player.damage(14)
+			player.damage(30)
 		} else if n < 44 {
 			fmt.Print(success)
 			fmt.Println("You endured the long trail, +\033[38;5;83m0.1\033[0m defense")
@@ -554,14 +593,14 @@ func exploreDeepForest() {
 			if rand.IntN(10) < 5 {
 				fmt.Print(success)
 				player.hp = min(player.hp+val, player.hpcap)
-				player.hpcap++
-				fmt.Printf("It was magical, +\033[38;5;83m1\033[0m hp cap")
+				player.hpcap += 4
+				fmt.Printf("It was magical, +\033[38;5;83m4\033[0m hp cap")
 				fmt.Printf(" and recover \033[38;5;83m%.01f\033[0m hp\n", val)
 			} else {
 				fmt.Print(fail)
 				player.hp = max(player.hp-val, 0)
-				player.hpcap -= 2
-				fmt.Printf("It was cursed, -\033[38;5;198m2\033[0m hp cap and took")
+				player.hpcap -= 4
+				fmt.Printf("It was cursed, -\033[38;5;198m4\033[0m hp cap and took")
 				player.damage(val)
 			}
 		} else if n < 55 {
@@ -583,7 +622,7 @@ func exploreDeepForest() {
 			} else if n < 4 {
 				fmt.Print(fail)
 				fmt.Printf("It boiled you, took")
-				player.damage(18)
+				player.damage(50)
 			} else {
 				fmt.Print(fail)
 				fmt.Println("It was okay")
@@ -595,10 +634,11 @@ func exploreDeepForest() {
 
 			var wolves entity = &attributes{
 				name:     "Wolves",
-				hp:       20,
-				hpcap:    20,
-				strength: 6,
-				defense:  3,
+				hp:       60,
+				hpcap:    60,
+				strength: 50,
+				defense:  8,
+				agility:  8,
 				effects:  make(map[string]int),
 			}
 
@@ -611,10 +651,11 @@ func exploreDeepForest() {
 
 			var bees entity = &attributes{
 				name:     "Bee swarm",
-				hp:       10,
-				hpcap:    10,
-				strength: 5,
+				hp:       37,
+				hpcap:    37,
+				strength: 37,
 				defense:  1,
+				agility:  15,
 				effects:  make(map[string]int),
 			}
 
@@ -627,10 +668,10 @@ func exploreDeepForest() {
 
 			var boar entity = &attributes{
 				name:     "Wild boar",
-				hp:       30,
-				hpcap:    30,
-				strength: 6,
-				defense:  4,
+				hp:       70,
+				hpcap:    70,
+				strength: 40,
+				defense:  20,
 				effects:  make(map[string]int),
 			}
 

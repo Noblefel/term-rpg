@@ -6,19 +6,32 @@ import (
 )
 
 func TestAttributes_AttackWith(t *testing.T) {
-	target := attributes{hp: 100}
-	attacker := attributes{strength: 50}
+	target := &attributes{hp: 100}
+	target.effects = make(map[string]int)
+
+	attacker := &attributes{strength: 50}
 	attacker.effects = make(map[string]int)
-	attacker.attackWith(&target, attacker.strength)
+	attacker.attackWith(target, attacker.strength)
 
 	if target.hp != 50 {
 		t.Errorf("target hp should be 50, got %.1f", target.hp)
 	}
 
+	t.Run("miss", func(t *testing.T) {
+		target.hp = 100
+		target.agility = 9999
+		attacker.attack(target)
+		target.agility = 0
+
+		if target.hp != 100 {
+			t.Errorf("target hp should be 100 because it missed, got %.1f", target.hp)
+		}
+	})
+
 	t.Run("strengthen effect", func(t *testing.T) {
 		target.hp = 100
 		attacker.effects["strengthen"] = 1
-		attacker.attackWith(&target, 10)
+		attacker.attackWith(target, 10)
 		clear(attacker.effects)
 
 		if 100-target.hp != 11 {
@@ -29,67 +42,98 @@ func TestAttributes_AttackWith(t *testing.T) {
 	t.Run("weakened effect", func(t *testing.T) {
 		target.hp = 100
 		attacker.effects["weakened"] = 1
-		attacker.attackWith(&target, 10)
+		attacker.attackWith(target, 10)
+		clear(attacker.effects)
 
 		if !equal(100-target.hp, 8.7) {
 			t.Errorf("damage should be 8.7 (13%% reduction), got %.1f", 100-target.hp)
+		}
+	})
+
+	t.Run("crit", func(t *testing.T) {
+		target.hp = 100
+		attacker.strength = 10
+		attacker.agility = 9999
+		attacker.attack(target)
+		attacker.agility = 0
+
+		if !equal(100-target.hp, 17.5) {
+			t.Errorf("damage should be 17.5 (x175%%), got %.1f", 100-target.hp)
+		}
+	})
+
+	t.Run("reflect", func(t *testing.T) {
+		target.effects["reflect"] = 1
+		attacker.hp = 10
+		attacker.hpcap = 10
+		attacker.strength = 10
+		attacker.attack(target)
+
+		if !equal(10-attacker.hp, 3) {
+			t.Errorf("should inflict 3 damage (30%% reflection), got %.1f", 10-attacker.hp)
 		}
 	})
 }
 
 func TestAttributes_ApplyEffects(t *testing.T) {
 	var target attributes
+	target.hpcap = 200
+	target.hp = 100
+	target.defense = 10
 	target.effects = make(map[string]int)
 
 	t.Run("poisoned", func(t *testing.T) {
-		target.hpcap = 200
-		target.hp = 100
 		target.effects["poisoned"] = 1
 		target.applyEffects()
 		clear(target.effects)
 
-		dmg := float32(100)*0.07 + 2
+		dmg := 100*0.1 + target.defense*0.5 + 10
+		dmg -= target.defense
+
 		if dmg != 100-target.hp {
-			t.Errorf("damage should be %.1f (7%% of hp + 2), got %.1f", dmg, 100-target.hp)
+			t.Errorf("damage should be %.1f (10%% of hp + 10 + 50%% def), got %.1f", dmg, 100-target.hp)
 		}
 	})
 
 	t.Run("poisoned severe", func(t *testing.T) {
-		target.hpcap = 200
 		target.hp = 100
 		target.effects["poisoned severe"] = 1
 		target.applyEffects()
 		clear(target.effects)
 
-		dmg := float32(100)*0.16 + 2
-		if !equal(dmg, 100-target.hp) {
-			t.Errorf("damage should be %.1f (16%% of hp + 2), got %.1f", dmg, 100-target.hp)
+		dmg := 100*0.2 + target.defense*0.5 + 20
+		dmg -= target.defense
+
+		if dmg != 100-target.hp {
+			t.Errorf("damage should be %.1f (20%% of hp + 20 + 50%% def), got %.1f", dmg, 100-target.hp)
 		}
 	})
 
 	t.Run("burning", func(t *testing.T) {
-		target.hpcap = 200
 		target.hp = 100
 		target.effects["burning"] = 1
 		target.applyEffects()
 		clear(target.effects)
 
-		dmg := float32(200)*0.04 + 5
+		dmg := 200*0.06 + target.defense*0.5 + 10
+		dmg -= target.defense
+
 		if dmg != 100-target.hp {
-			t.Errorf("damage should be %.1f (4%% of hpcap + 5), got %.1f", dmg, 100-target.hp)
+			t.Errorf("damage should be %.1f (6%% hp cap + 10 + 50%% def), got %.1f", dmg, 100-target.hp)
 		}
 	})
 
 	t.Run("burning severe", func(t *testing.T) {
-		target.hpcap = 200
 		target.hp = 100
 		target.effects["burning severe"] = 1
 		target.applyEffects()
 		clear(target.effects)
 
-		dmg := float32(200)*0.10 + 5
+		dmg := 200*0.12 + target.defense*0.5 + 20
+		dmg -= target.defense
+
 		if dmg != 100-target.hp {
-			t.Errorf("damage should be %.1f (10%% of hpcap + 5), got %.1f", dmg, 100-target.hp)
+			t.Errorf("damage should be %.1f (12%% hp cap + 20 + 50%% def), got %.1f", dmg, 100-target.hp)
 		}
 	})
 
