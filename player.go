@@ -12,7 +12,8 @@ type Player struct {
 	energy    int
 	energycap int
 
-	skills [5]int //indexes
+	skills [5]int //skill indexes
+	weapon int    //weapon index
 }
 
 var skills = []struct {
@@ -26,6 +27,7 @@ var skills = []struct {
 	{"great blow", "sacrifice the next turn to attack with 210% strength", 5, 3},
 	{"poison", "attack 85% strength and poison enemy for 3 turns", 5, 5},
 	{"stun", "attack 60% strength and stun enemy for 2 turns", 6, 4},
+	{"icy blast", "attack 60% strength and 30% chance to inflict freeze", 5, 3},
 	{"swift strike", "attack 85% strength (doesnt consume turn)", 4, 4},
 	{"knives throw", "attack 40 fixed damage (doesnt consume turn, no cd)", 4, 0},
 	{"fireball", "deal moderate amount of damage and inflict burning", 6, 5},
@@ -42,17 +44,53 @@ var skills = []struct {
 	{"vision", "see enemy attributes (no cost, no cd, doesnt consume turn)", 0, 0},
 }
 
+var weapons = []struct {
+	name string
+	desc string
+	cost int
+}{
+	//common
+	{"sword", "+15 strength", 40},
+	{"needle", "+10 strength, ignore 10% defense", 30},
+	{"club", "+12 strength, +5% multiplier", 38},
+	{"daggers", "+9 strength, +2 agility, -2 defense", 41},
+	{"staff", "+8 strength, +2 energy cap", 45},
+	{"gloves", "+6 strength, +4 defense", 40},
+	//rare
+	{"greatsword", "+40 strength", 200},
+	{"flaming sword", "+26 strength, 15% chance to inflict burning", 165},
+	{"rapier", "+20 strength, ignore 25% defense", 172},
+	{"warhammer", "+30 strength, +10% multiplier", 220},
+	{"chain daggers", "+15 strength, +4 agility, -2 defense", 190},
+	{"enchanted staff", "+16 strength, +4 energy cap", 175},
+	{"gauntlets", "+12 strength, +8 defense", 160},
+	//more rare
+	{"demonic blade", "+30 strength, +5% enemy current hp as damage", 230},
+	{"crimson blade", "+30 strength, heal by 5 hp (fixed)", 260},
+	{"dragonscale blade", "+50 strength, 30% chance to inflict burning or 10% severe burning", 479},
+	{"astral rapier", "+40 strength, ignore 40% defense", 375},
+	{"obsidian warhammer", "+60 strength, +20% multiplier increase", 500},
+	{"holy staff", "+30 strength, +6 energy cap", 400},
+	{"king's gauntlets", "+24 strength, +16 defense", 375},
+	//exceptional
+	{"voidforged rapier", "+40 strength, ignore defense", 1250},
+	{"soulreaper", "+25 strength, +15% enemy current hp as damage", 1333},
+	{"celestial staff", "+40 strength, +8 energy cap, -1 cooldown, heal 2% hp cap", 1500},
+	{"earthbreaker", "+100 strength, +25% multiplier increase", 1500},
+}
+
 func NewPlayer() *Player {
 	var player Player
 	player.name = "player"
-	player.gold = 30
+	player.gold = 100
 	player.perk = -1
+	player.weapon = -1
 
 	player.hp = 250
 	player.hpcap = 250
 	player.strength = 50
 	player.defense = 15
-	player.agility = 5
+	player.agility = 10
 	player.energy = 20
 	player.energycap = 20
 
@@ -70,9 +108,11 @@ func (p *Player) attack(enemy entity) {
 
 // player perks modifier applied here
 func (p *Player) attackWith(enemy entity, dmg float32) {
+	dmg = p.useWeapon(dmg, enemy)
+
 	if p.energy <= 3 {
 		fmt.Print(" exhausted")
-		dmg -= dmg * 0.1
+		dmg -= dmg * 0.2
 	}
 
 	if p.perk == 1 {
@@ -84,10 +124,6 @@ func (p *Player) attackWith(enemy entity, dmg float32) {
 		percent = min(percent, 1)         //if 40%+ hp = none
 		mul := 0.6 - percent*0.6
 		dmg += dmg * mul
-	}
-
-	if _, ok := enemy.(*undead); ok && p.perk == 5 {
-		dmg += dmg * 0.33
 	}
 
 	if p.perk == 7 {
@@ -103,8 +139,13 @@ func (p *Player) attackWith(enemy entity, dmg float32) {
 			dmg += val/2 - rand.Float32()*val
 		} else if roll < 75 {
 			// flat val
-			dmg += 10 - 0*20
+			dmg += 10 - rand.Float32()*20
 		}
+	}
+
+	if p.perk == 9 && roll() < 15 {
+		fmt.Print(" \033[38;5;226mfreeze\033[0m")
+		enemy.attr().effects["frozen"] = 2
 	}
 
 	p.attributes.attackWith(enemy, dmg)
@@ -114,7 +155,7 @@ func (p *Player) attackWith(enemy entity, dmg float32) {
 func (p *Player) damage(dmg float32) {
 	if p.perk == 0 {
 		dmg -= dmg * 0.1
-		dmg = min(dmg, p.hpcap*0.16)
+		dmg = min(dmg, p.hpcap*0.12)
 	}
 
 	if p.perk == 2 {
@@ -128,6 +169,11 @@ func (p *Player) damage(dmg float32) {
 }
 
 func (p *Player) skill(i int, enemy entity) bool {
+	if p.effects["disoriented"] > 0 {
+		fmt.Println("\033[38;5;196mcannot use skill when disoriented\033[0m")
+		return false
+	}
+
 	skill := skills[i]
 	cost := skill.cost
 
@@ -136,12 +182,12 @@ func (p *Player) skill(i int, enemy entity) bool {
 	}
 
 	if cost > p.energy {
-		fmt.Println("\033[38;5;196mNot enough energy\033[0m")
+		fmt.Println("\033[38;5;196mnot enough energy\033[0m")
 		return false
 	}
 
 	if p.effects["cd"+skill.name] > 0 {
-		fmt.Println("\033[38;5;196mSkill in cooldown\033[0m")
+		fmt.Println("\033[38;5;196mskill in cooldown\033[0m")
 		return false
 	}
 
@@ -156,7 +202,11 @@ func (p *Player) skill(i int, enemy entity) bool {
 	}
 
 	if p.perk == 7 {
-		cooldown = rand.IntN(7)
+		cooldown = rand.IntN(8)
+	}
+
+	if p.weapon > 0 && weapons[p.weapon].name == "celestial staff" {
+		cooldown--
 	}
 
 	p.effects["cd"+skill.name] = cooldown
@@ -182,6 +232,11 @@ func (p *Player) skill(i int, enemy entity) bool {
 		p.attackWith(enemy, p.strength*0.85)
 	case "stun":
 		enemy.attr().effects["stunned"] = 2
+		p.attackWith(enemy, p.strength*0.6)
+	case "icy blast":
+		if roll() < 30 {
+			enemy.attr().effects["frozen"] = 2
+		}
 		p.attackWith(enemy, p.strength*0.6)
 	case "swift strike":
 		p.attackWith(enemy, p.strength*0.85)
@@ -328,26 +383,223 @@ func (p *Player) flee(enemy entity) {
 	}
 }
 
-func (p *Player) setPerk(newperk int) {
-	if newperk == 0 {
+func (p *Player) setWeapon(index int) {
+	defer func() {
+		p.strength = max(p.strength, 5)
+		p.defense = max(p.defense, 1)
+		p.agility = max(p.agility, 1)
+		p.energycap = max(p.energycap, 10)
+		p.weapon = index
+	}()
+
+	// new
+	switch weapons[index].name {
+	case "sword":
+		p.strength += 15
+	case "needle":
+		p.strength += 10
+	case "club":
+		p.strength += 12
+	case "daggers":
+		p.strength += 9
+		p.agility += 2
+		p.defense -= 2
+	case "staff":
+		p.strength += 8
+		p.energycap += 2
+	case "gloves":
+		p.strength += 6
+		p.defense += 4
+	case "greatsword":
+		p.strength += 40
+	case "flaming sword":
+		p.strength += 26
+	case "rapier":
+		p.strength += 20
+	case "warhammer":
+		p.strength += 30
+	case "chain daggers":
+		p.strength += 15
+		p.agility += 4
+	case "enchanted staff":
+		p.strength += 16
+		p.energycap += 4
+	case "gauntlets":
+		p.strength += 12
+		p.defense += 8
+	case "demonic blade":
+		p.strength += 30
+	case "crimson blade":
+		p.strength += 30
+	case "dragonscale blade":
+		p.strength += 50
+	case "astral rapier":
+		p.strength += 40
+	case "obsidian warhammer":
+		p.strength += 60
+	case "holy staff":
+		p.strength += 30
+		p.energycap += 6
+	case "king's gauntlets":
+		p.strength += 24
+		p.defense += 16
+	case "voidforged rapier":
+		p.strength += 40
+	case "soulreaper":
+		p.strength += 25
+	case "celestial staff":
+		p.strength += 40
+		p.energycap += 8
+	case "earthbreaker":
+		p.strength += 100
+	}
+
+	if p.weapon < 0 {
+		return
+	}
+
+	// new
+	switch weapons[p.weapon].name {
+	case "sword":
+		p.strength -= 15
+	case "needle":
+		p.strength -= 10
+	case "club":
+		p.strength -= 12
+	case "daggers":
+		p.strength -= 9
+		p.agility -= 2
+		p.defense += 2
+	case "staff":
+		p.strength -= 8
+		p.energycap -= 2
+	case "gloves":
+		p.strength -= 6
+		p.defense -= 4
+	case "greatsword":
+		p.strength -= 40
+	case "flaming sword":
+		p.strength -= 26
+	case "rapier":
+		p.strength -= 20
+	case "warhammer":
+		p.strength -= 30
+	case "chain daggers":
+		p.strength -= 15
+		p.agility -= 4
+		p.defense += 2
+	case "enchanted staff":
+		p.strength -= 16
+	case "gauntlets":
+		p.strength -= 12
+		p.defense -= 8
+	case "demonic blade":
+		p.strength -= 30
+	case "crimson blade":
+		p.strength -= 30
+	case "dragonscale blade":
+		p.strength -= 50
+	case "astral rapier":
+		p.strength -= 40
+	case "obsidian warhammer":
+		p.strength -= 60
+	case "holy staff":
+		p.strength -= 30
+		p.energycap -= 6
+	case "king's gauntlets":
+		p.strength -= 24
+		p.defense -= 16
+	case "voidforged rapier":
+		p.strength -= 40
+	case "soulreaper":
+		p.strength -= 25
+	case "celestial staff":
+		p.strength -= 40
+		p.energycap -= 8
+	case "earthbreaker":
+		p.strength -= 100
+	}
+}
+
+// specific weapon effects
+func (p *Player) useWeapon(dmg float32, enemy entity) float32 {
+	if p.weapon < 0 {
+		return dmg
+	}
+
+	switch weapons[p.weapon].name {
+	case "needle":
+		dmg += enemy.attr().defense * 0.1
+	case "club":
+		dmg += dmg * 0.05
+	case "flaming sword":
+		if roll() < 15 {
+			enemy.attr().effects["burning"] = 2
+		}
+	case "rapier":
+		dmg += enemy.attr().defense * 0.25
+	case "warhammer":
+		dmg += dmg * 0.1
+	case "demonic blade":
+		dmg += enemy.attr().hp * 0.05
+	case "crimson blade":
+		p.hp = min(p.hp+5, p.hpcap)
+		fmt.Print(" heal by 5")
+	case "dragonscale blade":
+		roll := roll()
+
+		if roll < 10 {
+			enemy.attr().effects["burning severe"] = 2
+		} else if roll < 40 {
+			enemy.attr().effects["burning"] = 2
+		}
+	case "astral rapier":
+		dmg += enemy.attr().defense * 0.4
+	case "obsidian warhammer":
+		dmg += dmg * 0.2
+	case "voidforged rapier":
+		dmg += enemy.attr().defense
+	case "soulreaper":
+		dmg += enemy.attr().hp * 0.15
+	case "celestial staff":
+		heal := p.hpcap * 0.02
+		p.hp = min(p.hp+heal, p.hpcap)
+		fmt.Printf(" heal by %.1f", heal)
+	case "earthbreaker":
+		dmg += dmg * 0.25
+	}
+
+	return dmg
+}
+
+func (p *Player) setPerk(index int) {
+	if index == 0 {
 		p.hp += 20
 		p.hpcap += 20
 		p.defense += 5
 	}
 
-	if newperk == 1 {
+	if index == 1 {
 		p.hp = max(1, p.hp-50)
 		p.hpcap = max(1, p.hpcap-50)
 		p.energy = max(1, p.energy-4)
 		p.energycap = max(1, p.energycap-4)
 	}
 
-	if newperk == 3 {
+	if index == 3 {
 		p.energycap += 2
 	}
 
-	if newperk == 6 {
+	if index == 6 {
 		p.agility += 5
+	}
+
+	if index == 8 {
+		p.strength += 5
+	}
+
+	if index == 9 {
+		p.agility = max(1, p.agility-5)
 	}
 
 	// adjustment when switching from old perks
@@ -373,7 +625,15 @@ func (p *Player) setPerk(newperk int) {
 		p.agility = max(1, p.agility-5)
 	}
 
-	p.perk = newperk
+	if p.perk == 8 {
+		p.strength = max(1, p.strength-5)
+	}
+
+	if p.perk == 9 {
+		p.agility += 5
+	}
+
+	p.perk = index
 }
 
 func (p Player) getperk() string {
@@ -386,6 +646,9 @@ func (p Player) getperk() string {
 		"Deadman",
 		"Survivor",
 		"Insanity",
+		"Shock",
+		"Frigid",
+		"Ranger",
 	}
 	return perk[p.perk]
 }

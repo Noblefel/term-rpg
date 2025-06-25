@@ -50,6 +50,17 @@ func TestAttributes_AttackWith(t *testing.T) {
 		}
 	})
 
+	t.Run("ace", func(t *testing.T) {
+		target.hp = 100
+		attacker.effects["ace"] = 1
+		attacker.attackWith(target, 10)
+		clear(attacker.effects)
+
+		if !equal(100-target.hp, 12.8) {
+			t.Errorf("damage should be 12.8 (28%% bonus), got %.1f", 100-target.hp)
+		}
+	})
+
 	t.Run("crit", func(t *testing.T) {
 		target.hp = 100
 		attacker.strength = 10
@@ -87,7 +98,7 @@ func TestAttributes_ApplyEffects(t *testing.T) {
 		target.applyEffects()
 		clear(target.effects)
 
-		dmg := 100*0.1 + target.defense*0.5 + 10
+		dmg := 100*0.11 + target.defense*0.5 + 10
 		dmg -= target.defense
 
 		if dmg != 100-target.hp {
@@ -101,7 +112,7 @@ func TestAttributes_ApplyEffects(t *testing.T) {
 		target.applyEffects()
 		clear(target.effects)
 
-		dmg := 100*0.2 + target.defense*0.5 + 20
+		dmg := 100*0.22 + target.defense*0.5 + 20
 		dmg -= target.defense
 
 		if dmg != 100-target.hp {
@@ -112,28 +123,38 @@ func TestAttributes_ApplyEffects(t *testing.T) {
 	t.Run("burning", func(t *testing.T) {
 		target.hp = 100
 		target.effects["burning"] = 1
+		target.effects["frozen"] = 5
 		target.applyEffects()
 		clear(target.effects)
 
-		dmg := 200*0.06 + target.defense*0.5 + 10
+		dmg := 200*0.05 + target.defense*0.5 + 10
 		dmg -= target.defense
 
 		if dmg != 100-target.hp {
 			t.Errorf("damage should be %.1f (6%% hp cap + 10 + 50%% def), got %.1f", dmg, 100-target.hp)
+		}
+
+		if target.effects["frozen"] != 0 {
+			t.Error("should remove frozen effect")
 		}
 	})
 
 	t.Run("burning severe", func(t *testing.T) {
 		target.hp = 100
 		target.effects["burning severe"] = 1
+		target.effects["frozen"] = 5
 		target.applyEffects()
 		clear(target.effects)
 
-		dmg := 200*0.12 + target.defense*0.5 + 20
+		dmg := 200*0.1 + target.defense*0.5 + 20
 		dmg -= target.defense
 
 		if dmg != 100-target.hp {
 			t.Errorf("damage should be %.1f (12%% hp cap + 20 + 50%% def), got %.1f", dmg, 100-target.hp)
+		}
+
+		if target.effects["frozen"] != 0 {
+			t.Error("should remove frozen effect")
 		}
 	})
 
@@ -200,14 +221,49 @@ func TestAttributes_Damage(t *testing.T) {
 		}
 	})
 
+	t.Run("frozen effect", func(t *testing.T) {
+		rolltest = 1
+		target.hp = 100
+		target.effects["frozen"] = 1
+		target.damage(10)
+
+		if 100-target.hp != 20 {
+			t.Errorf("damage should be 20 (shatter x2 bonus), got %.1f", 100-target.hp)
+		}
+
+		rolltest = 75
+		target.hp = 100
+		target.effects["frozen"] = 1
+		target.defense = 10
+		target.damage(20)
+		clear(target.effects)
+
+		dmg := 20 - target.defense*1.25
+		if 100-target.hp != dmg {
+			t.Errorf("damage should be %.1f (25%% defense increase), got %.1f", dmg, 100-target.hp)
+		}
+	})
+
 	t.Run("weakened effect", func(t *testing.T) {
 		target.hp = 100
 		target.defense = 10
 		target.effects["weakened"] = 1
 		target.damage(10)
+		clear(target.effects)
 
 		if 100-target.hp != 5 {
 			t.Errorf("damage should be 5 (50%% defense reduction), got %.1f", 100-target.hp)
+		}
+	})
+
+	t.Run("ace effect", func(t *testing.T) {
+		target.hp = 100
+		target.defense = 0
+		target.effects["ace"] = 1
+		target.damage(10)
+
+		if !equal(100-target.hp, 7.2) {
+			t.Errorf("damage should be 7.2 (28%% reduction), got %.1f", 100-target.hp)
 		}
 	})
 }

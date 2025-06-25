@@ -35,6 +35,7 @@ func main() {
 		perk := selectPerks()
 		player = NewPlayer()
 		player.setPerk(perk)
+		menuWeaponStart()
 		menuPoints()
 	}
 
@@ -55,12 +56,32 @@ func selectPerks() int {
 		"[6] ⚰️  Deadman    : inflict weaken effect at the start of battle",
 		"[7] 🏃 Survivor   : almost always succeed when fleeing",
 		"[8] 🎃 Insanity   : it can either go really well or really bad",
+		"[9] 🌩️  Shock      : start with ace but suffer from prolonged battle",
+		"[10] ❄️  Frigid    : attacks have small chance to freeze the enemy",
+		"[11] 🏹 Ranger    : guess the enemy to gain ace if correct",
 	)
+}
+
+func menuWeaponStart() {
+	clearScreen()
+	fmt.Println("select your starting weapon")
+	fmt.Println("----------------------------")
+
+	i := vivi.Choices(
+		"[1] sword    : +15 damage",
+		"[2] needle   : +10 damage, ignore 10% defense",
+		"[3] club     : +12 damage, +5% multiplier",
+		"[4] daggers  : +9 damage, +2 agility, -2 defense",
+		"[5] staff    : +8 damage, +2 energy cap",
+		"[6] gloves   : +6 damage, +4 defense",
+	)
+
+	player.setWeapon(i)
 }
 
 func menuPoints() {
 	var (
-		points    = 10
+		points    = 5
 		temphpcap = player.hpcap
 		tempstr   = player.strength
 		tempdef   = player.defense
@@ -81,16 +102,16 @@ func menuPoints() {
 		fmt.Printf("\033[s")
 
 		choice := vivi.Choices(
-			"increase HP cap by 7.5",
-			"increase strength by 1",
-			"increase defense by 1",
-			"increase agility by 1",
-			"increase energy cap by 1 (3 points)",
+			"increase HP cap by 20",
+			"increase strength by 3",
+			"increase defense by 3",
+			"increase agility by 3",
+			"increase energy cap by 1",
 			"Reset",
 			"Done",
 		)
 
-		if choice < 4 && points == 0 || choice == 4 && points < 3 {
+		if choice < 5 && points == 0 {
 			fmt.Print("\033[u\033[0J")
 			fmt.Println("\033[38;5;196mnot enough points\033[0m")
 			vivi.Choices("continue")
@@ -99,22 +120,22 @@ func menuPoints() {
 
 		switch choice {
 		case 0:
-			player.hpcap += 7.5
+			player.hpcap += 20
 			points--
 		case 1:
-			player.strength++
+			player.strength += 3
 			points--
 		case 2:
-			player.defense++
+			player.defense += 3
 			points--
 		case 3:
-			player.agility++
+			player.agility += 3
 			points--
 		case 4:
 			player.energycap++
-			points -= 3
+			points--
 		case 5:
-			points = 10
+			points = 5
 			player.hpcap = temphpcap
 			player.strength = tempstr
 			player.defense = tempdef
@@ -135,6 +156,7 @@ func menuMain() {
 		fmt.Printf(" Energy : %s %d\n", player.energybar(), player.energy)
 		fmt.Printf(" Perk   : %s \n", player.getperk())
 		fmt.Printf(" Gold   : %d \n", player.gold)
+		fmt.Printf(" Weapon : %s \n", weapons[player.weapon].name)
 		fmt.Printf(" Stage  : %d \n", stage+1)
 		fmt.Println(" --------")
 
@@ -260,7 +282,7 @@ func menuSkills() {
 				break
 			}
 
-			fmt.Println("\033[38;5;196minvalid skill\033[0m")
+			fmt.Println(fail + "invalid skill")
 		}
 	}
 }
@@ -280,8 +302,9 @@ func menuTown() {
 		choices := vivi.Choices(
 			"[1] guest house ($5)",
 			"[2] training grounds ($10)",
-			"[3] switch perk ($34)",
-			"[4] go back",
+			"[3] weapon shop ",
+			"[4] switch perk ($34)",
+			"[5] go back",
 		)
 
 		fmt.Print("\033[u\033[0J")
@@ -310,6 +333,8 @@ func menuTown() {
 			player.train()
 			vivi.Choices("continue")
 		case 2:
+			menuWeaponShop()
+		case 3:
 			if player.gold < 34 {
 				fmt.Println(fail + "not enough gold to switch perk")
 				vivi.Choices("continue")
@@ -328,26 +353,95 @@ func menuTown() {
 			player.setPerk(newperk)
 			fmt.Println(success + "perk changed")
 			vivi.Choices("continue")
-		case 3:
+		case 4:
 			return
 		}
+	}
+}
+
+func menuWeaponShop() {
+	var allweapons strings.Builder
+	tw := tabwriter.NewWriter(&allweapons, 0, 0, 2, ' ', tabwriter.Debug)
+	fmt.Fprintln(tw, "no\t name\t description\t cost")
+	fmt.Fprintln(tw, "--\t --\t --\t --")
+
+	for i, w := range weapons {
+		fmt.Fprintf(tw, "%d\t %s\t %s\t %d\n",
+			i+1,
+			w.name,
+			w.desc,
+			w.cost,
+		)
+	}
+	tw.Flush()
+
+	clearScreen()
+	fmt.Println("\033[1mWeapons shop\033[0m")
+	fmt.Println("------------------------")
+	fmt.Println(allweapons.String())
+
+	for {
+		fmt.Printf(
+			"trade \033[38;5;226m%s\033[0m with... (pick a number or empty to cancel) > ",
+			weapons[player.weapon].name,
+		)
+		// using fmt.Scan didnt work somehow
+		newindex, _ := strconv.Atoi(vivi.Password("#"))
+
+		if newindex == 0 {
+			return
+		}
+
+		if newindex < 0 || newindex > len(weapons) {
+			fmt.Println(fail + "invalid weapon")
+			continue
+		}
+
+		newindex--
+
+		if player.gold >= weapons[newindex].cost {
+			player.gold -= weapons[newindex].cost
+			player.setWeapon(newindex)
+			return
+		}
+
+		fmt.Println(fail + "not enough gold")
 	}
 }
 
 func menuBattle(enemy entity, exploring bool) {
 	defer clear(player.effects)
 	defer clear(enemy.attr().effects)
+	turn := 1
 
 	if player.perk == 4 {
-		enemy.attr().effects["poisoned"] = 6
+		enemy.attr().effects["poisoned"] = 5
 	}
 
 	if player.perk == 5 {
 		enemy.attr().effects["weakened"] = 3
 	}
 
-	if _, ok := enemy.(*undead); ok {
+	if player.perk == 8 {
+		player.effects["ace"] = 2
+	}
+
+	name := enemy.attr().name
+
+	if name == "undead" {
 		player.effects["weakened"] = 3
+	}
+
+	if name == "undead" && player.perk == 5 {
+		player.effects["ace"] = 99
+	}
+
+	if (name == "infernal" || name == "demon") && player.perk == 9 {
+		enemy.attr().effects["ace"] = 99
+	}
+
+	if player.perk == 10 && !exploring {
+		menuRangerGuess(enemy)
 	}
 
 	for {
@@ -360,11 +454,19 @@ func menuBattle(enemy entity, exploring bool) {
 		fmt.Printf("health : %s %.1f\n", enemy.attr().hpbar(), enemy.attr().hp)
 		fmt.Println("--------")
 
+		if player.effects["ace"] > 0 {
+			fmt.Println("  you have an \033[38;5;226mace\033[0m")
+		}
+
+		if enemy.attr().effects["ace"] > 0 {
+			fmt.Printf("  %s have an \033[38;5;226mace\033[0m\n", enemy.attr().name)
+		}
+
 		if player.perk == 7 {
 			roll := roll()
 
 			if roll < 1 {
-				fmt.Print("  \033[38;5;226minsanity\033[0m: you somehow annihilate the enemy!")
+				fmt.Println("  \033[38;5;226minsanity\033[0m: you somehow annihilate the enemy!")
 				enemy.setHP(0)
 			} else if roll < 10 {
 				player.effects["stunned"] = 1
@@ -382,6 +484,10 @@ func menuBattle(enemy entity, exploring bool) {
 				player.defense = max(1, player.defense+n)
 				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f defense\n", n)
 			}
+		}
+
+		if player.perk == 8 && turn >= 6 {
+			enemy.attr().effects["ace"] = 2
 		}
 
 		player.applyEffects()
@@ -407,7 +513,7 @@ func menuBattle(enemy entity, exploring bool) {
 
 		if enemy.attr().hp <= 0 {
 			fmt.Println("you have \033[38;5;83mwon\033[0m the battle")
-			gold := scale(10, 2) + rand.Float32()*scale(20, 5)
+			gold := scale(20, 10) + rand.Float32()*scale(20, 10)
 			player.gold += int(gold)
 			fmt.Printf("got %.0f gold\n", gold)
 			vivi.Choices("return")
@@ -417,6 +523,8 @@ func menuBattle(enemy entity, exploring bool) {
 
 		if enemy.attr().effects["stunned"] > 0 {
 			fmt.Printf(fail+"%s is stunned\n", enemy.attr().name)
+		} else if enemy.attr().effects["frozen"] > 0 {
+			fmt.Printf(fail+"%s is frozen\n", enemy.attr().name)
 		} else {
 			fmt.Printf("waiting for enemy... ")
 			timer(2000)
@@ -436,11 +544,66 @@ func menuBattle(enemy entity, exploring bool) {
 			return
 		}
 
+		if player.effects["ace"] > 0 {
+			player.energy++
+		}
+
+		player.energy = min(player.energy+1, player.energycap)
 		enemy.attr().decrementEffect()
 		player.decrementEffect()
-		player.energy = min(player.energy+1, player.energycap)
 		vivi.Choices("next turn")
+		turn++
 	}
+}
+
+func menuRangerGuess(enemy entity) {
+	clearScreen()
+	fmt.Println("-------------")
+	fmt.Println("you spotted something in the distance, can you guess what it is?")
+	fmt.Printf("they have: %.1f hp, %.1f strength, %.1f defense, %.1f agility\n",
+		enemy.attr().hp,
+		enemy.attr().strength,
+		enemy.attr().defense,
+		enemy.attr().agility,
+	)
+	fmt.Println("-------------")
+
+	names := []string{
+		"knight", "wizard", "changeling",
+		"vampire", "demon", "shardling",
+		"genie", "celestial", "shapeshift",
+		"undead", "scorpion", "goblin",
+		"infernal",
+	}
+
+	rand.Shuffle(len(names), func(i, j int) {
+		names[i], names[j] = names[j], names[i]
+	})
+
+	choices := names[:3]
+	correct := -1
+
+	for i, s := range choices {
+		if s == enemy.attr().name {
+			correct = i
+		}
+	}
+
+	if correct == -1 {
+		i := rand.IntN(3)
+		choices[i] = enemy.attr().name
+		correct = i
+	}
+
+	if vivi.Choices(choices...) == correct {
+		player.effects["ace"] = 5
+		fmt.Println(success + "correct! you get an ace")
+	} else {
+		enemy.attr().effects["ace"] = 5
+		fmt.Println(fail + "wrong!")
+	}
+
+	vivi.Choices("continue")
 }
 
 func menuPlayerActions(enemy entity) {
@@ -461,11 +624,6 @@ func menuPlayerActions(enemy entity) {
 			player.attack(enemy)
 			return
 		case 1:
-			if _, ok := enemy.(*celestial); ok {
-				fmt.Println("  \033[38;5;196mcannot use skill in the presence of the divine\033[0m")
-				continue
-			}
-
 			var choices []string
 
 			for _, i := range player.skills {

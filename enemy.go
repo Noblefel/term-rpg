@@ -9,16 +9,17 @@ func spawn() entity {
 	var enemies = []func() entity{
 		newKnight,
 		newWizard,
-		newChangeling,
+		// newChangeling,
 		newVampire,
 		newDemon,
 		newShardling,
 		newGenie,
 		newCelestial,
-		newShapeshift,
+		// newShapeshift,
 		newUndead,
 		newScorpion,
 		newGoblin,
+		newInfernal,
 	}
 
 	spawn := enemies[rand.IntN(len(enemies))]
@@ -165,8 +166,8 @@ type vampire struct {
 func newVampire() entity {
 	attr := attributes{
 		name:     "vampire",
-		hp:       scale(190, 23.4),
-		hpcap:    scale(190, 23.4),
+		hp:       scale(180, 22.4),
+		hpcap:    scale(180, 22.4),
 		defense:  scale(14, 1.9),
 		strength: scale(43, 3.4),
 		agility:  scale(10, 0.029),
@@ -237,7 +238,7 @@ func (d *demon) attack(target entity) {
 			"demon conjure \033[38;5;226mlife draining\033[0m magic!",
 		}
 
-		drain := d.strength + target.attr().hp*0.04
+		drain := d.strength + target.attr().hp*0.03
 		hp := max(target.attr().hp-drain, 0)
 		target.setHP(hp)
 		fmt.Printf(messages[rand.IntN(len(messages))])
@@ -385,7 +386,7 @@ type celestial struct {
 
 func newCelestial() entity {
 	attr := attributes{
-		name:     "the celestial being",
+		name:     "celestial being",
 		hp:       scale(300, 40),
 		hpcap:    scale(300, 40),
 		defense:  scale(7.5, 0.5),
@@ -401,10 +402,14 @@ func (c *celestial) attack(target entity) {
 	fmt.Print(success)
 	roll := roll()
 
-	if roll < 12 {
+	if roll < 10 {
 		fmt.Println("the celestial being channels a \033[38;5;226mhealing aura\033[0m!")
 		c.effects["heal aura"] = 5
-	} else if roll < 37 {
+	} else if roll < 30 {
+		fmt.Println("the celestial being cast a \033[38;5;226mblinding light\033[0m")
+		target.attr().effects["disoriented"] = 3
+		c.attackWith(target, c.strength*0.7)
+	} else if roll < 40 {
 		messages := []string{
 			"the celestial being call upon the power of the \033[38;5;226mholy fire\033[0m!",
 			"the celestial being draw upon the power of the \033[38;5;226msun\033[0m!",
@@ -480,24 +485,18 @@ func newUndead() entity {
 func (u *undead) attack(target entity) {
 	fmt.Print(success)
 	roll := roll()
-	strength := u.strength
-
-	// penalty against deadman perk
-	if v, ok := target.(*Player); ok && v.perk == 5 {
-		strength -= strength * 0.33
-	}
 
 	if roll < 8 {
 		fmt.Print("the undead vomits a stream of \033[38;5;226macidic bile\033[0m!")
 		target.attr().effects["poisoned"] = 3
-		u.attackWith(target, strength*0.4)
+		u.attackWith(target, u.strength*0.4)
 	} else if roll < 28 {
 		fmt.Print("the undead calls in fellow undead from underground!")
-		dmg := strength + rand.Float32()*scale(30, 4)
+		dmg := u.strength + rand.Float32()*scale(30, 4)
 		u.attackWith(target, dmg)
 	} else if roll < 35 {
 		fmt.Print("the undead bites down on the target's leg!")
-		u.attackWith(target, strength*1.33)
+		u.attackWith(target, u.strength*1.33)
 	} else {
 		messages := []string{
 			"the undead rotting fist connects with its target!",
@@ -507,7 +506,7 @@ func (u *undead) attack(target entity) {
 		}
 
 		fmt.Print(messages[rand.IntN(len(messages))])
-		u.attackWith(target, strength)
+		u.attackWith(target, u.strength)
 	}
 }
 
@@ -568,8 +567,8 @@ func newGoblin() entity {
 		hp:       scale(130, 11),
 		hpcap:    scale(130, 11),
 		defense:  scale(10, 1),
-		strength: scale(44, 3.47),
-		agility:  scale(20, 0.4),
+		strength: scale(38, 3.1),
+		agility:  scale(25, 0.4),
 		effects:  make(map[string]int),
 	}
 	return &goblin{attr}
@@ -600,5 +599,59 @@ func (g *goblin) attack(target entity) {
 
 		fmt.Print(messages[rand.IntN(len(messages))])
 		g.attackWith(target, g.strength)
+	}
+}
+
+type infernal struct {
+	attributes
+}
+
+func newInfernal() entity {
+	attr := attributes{
+		name:     "infernal",
+		hp:       scale(175, 19),
+		hpcap:    scale(175, 19),
+		defense:  scale(12, 0.75),
+		strength: scale(35, 2.8),
+		agility:  scale(4, 0.09),
+		effects:  make(map[string]int),
+	}
+	return &infernal{attr}
+}
+
+func (i *infernal) attack(target entity) {
+	fmt.Print(success)
+	roll := roll()
+
+	if roll < 30 {
+		messages := []string{
+			"the infernal drew upon the power of the \033[38;5;226mdeepest fire\033[0m!",
+			"the infernal summons a rain of \033[38;5;226mdeadly flame\033[0m!",
+			"the infernal unleash a wave of \033[38;5;226mblack flame\033[0m!",
+			"the infernal turned the ground into \033[38;5;226mmolten lava\033[0m!",
+		}
+
+		target.attr().effects["burning severe"] = 2
+		fmt.Print(messages[rand.IntN(len(messages))])
+		i.attackWith(target, i.strength)
+	} else if roll < 40 {
+		str := 1 + rand.Float32()*(i.strength/10)
+		i.strength += str
+		fmt.Printf("the infernal \033[38;5;226menhanced\033[0m itself with molten energy, +%.1f strength!\n", str)
+	} else if roll < 50 {
+		def := 4 + rand.Float32()*(i.defense/10)
+		i.defense += def
+		fmt.Printf("the infernal uses \033[38;5;226mmagma shield\033[0m, +%.1f defense!\n", def)
+	} else {
+		messages := []string{
+			"the infernal sends a blast of flames",
+			"the infernal's burning fist reaches out!",
+			"the infernal surround the area with searing heat!",
+			"fiery claws of the inferno tears through the flesh!",
+		}
+
+		target.attr().effects["burning"] = 2
+		fmt.Print(messages[rand.IntN(len(messages))])
+		i.attackWith(target, i.strength)
 	}
 }

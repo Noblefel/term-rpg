@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 	"math/rand/v2"
 	"os"
 	"strings"
@@ -55,17 +54,11 @@ func roll() int {
 	return rand.IntN(100)
 }
 
-// quick fix floating issue
-func equal(a, b float32) bool {
-	x := math.Round(float64(a) * 100)
-	y := math.Round(float64(b) * 100)
-	return x == y
-}
-
 type savedata struct {
 	Stage  int     `json:"stage"`
 	Perk   int     `json:"perk"`
 	Gold   int     `json:"gold"`
+	Weapon int     `json:"weapon"`
 	Skills [5]int  `json:"skills"`
 	Hp     float32 `json:"hp"`
 	Hpc    float32 `json:"hpc"`
@@ -81,6 +74,7 @@ func save() error {
 		Stage:  stage,
 		Perk:   player.perk,
 		Gold:   player.gold,
+		Weapon: player.weapon,
 		Skills: player.skills,
 		Hp:     player.hp,
 		Hpc:    player.hpcap,
@@ -120,6 +114,7 @@ func load() error {
 	load.name = "player"
 	load.perk = data.Perk
 	load.gold = data.Gold
+	load.weapon = data.Weapon
 	load.skills = data.Skills
 	load.hp = data.Hp
 	load.hpcap = data.Hpc

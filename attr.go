@@ -51,6 +51,10 @@ func (attr *attributes) attackWith(target entity, dmg float32) {
 		dmg -= dmg * 0.13
 	}
 
+	if attr.effects["ace"] > 0 {
+		dmg += dmg * 0.28
+	}
+
 	crit := attr.agility - target.attr().agility*0.25
 	if crit > rand.Float32()*100 {
 		fmt.Print(" \033[38;5;226mcrit\033[0m")
@@ -70,22 +74,24 @@ func (attr *attributes) applyEffects() {
 
 	if attr.effects["poisoned"] > 0 {
 		fmt.Printf("  %s suffer from poison:", attr.name)
-		attr.damage(attr.defense*0.5 + attr.hp*0.1 + 10)
+		attr.damage(attr.defense*0.5 + attr.hp*0.11 + 10)
 	}
 
 	if attr.effects["poisoned severe"] > 0 {
 		fmt.Printf("  %s suffer from severe poison:", attr.name)
-		attr.damage(attr.defense*0.5 + attr.hp*0.2 + 20)
+		attr.damage(attr.defense*0.5 + attr.hp*0.22 + 20)
 	}
 
 	if attr.effects["burning"] > 0 {
 		fmt.Printf("  %s suffer from burning:", attr.name)
-		attr.damage(attr.defense*0.5 + attr.hpcap*0.06 + 10)
+		attr.damage(attr.defense*0.5 + attr.hpcap*0.05 + 10)
+		delete(attr.effects, "frozen")
 	}
 
 	if attr.effects["burning severe"] > 0 {
 		fmt.Printf("  %s suffer from severe burning:", attr.name)
-		attr.damage(attr.defense*0.5 + attr.hpcap*0.12 + 20)
+		attr.damage(attr.defense*0.5 + attr.hpcap*0.1 + 20)
+		delete(attr.effects, "frozen")
 	}
 
 	if attr.effects["heal aura"] > 0 {
@@ -117,6 +123,19 @@ func (attr *attributes) damage(dmg float32) {
 
 	if attr.effects["force-field"] > 0 {
 		dmg -= dmg * 0.15
+	}
+
+	if attr.effects["ace"] > 0 {
+		dmg -= dmg * 0.28
+	}
+
+	if attr.effects["frozen"] == 1 { // prevent instant shatter
+		if roll() < 50 {
+			fmt.Print(" \033[38;5;226mshatter\033[0m")
+			dmg *= 2
+		} else {
+			defense += defense * 0.25
+		}
 	}
 
 	if attr.effects["weakened"] > 0 {
