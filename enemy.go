@@ -9,13 +9,13 @@ func spawn() entity {
 	var enemies = []func() entity{
 		newKnight,
 		newWizard,
-		// newChangeling,
+		newChangeling,
 		newVampire,
 		newDemon,
 		newShardling,
 		newGenie,
 		newCelestial,
-		// newShapeshift,
+		newShapeshift,
 		newUndead,
 		newScorpion,
 		newGoblin,
@@ -35,8 +35,8 @@ func newKnight() entity {
 		name:     "knight",
 		hp:       scale(250, 30),
 		hpcap:    scale(250, 30),
-		defense:  scale(25, 2.8),
-		strength: scale(42, 3.25),
+		defense:  scale(24, 2.7),
+		strength: scale(42, 3.2),
 		agility:  scale(7, 0.18),
 		effects:  make(map[string]int),
 	}
@@ -48,7 +48,7 @@ func (k *knight) attack(target entity) {
 	roll := roll()
 
 	if roll < 15 {
-		def := 0.5 + rand.Float32()*(k.defense/10)
+		def := 0.5 + rand.Float64()*(k.defense/10)
 		k.defense += def
 		k.hp = min(k.hp+def+20, k.hpcap)
 
@@ -112,11 +112,11 @@ func (w *wizard) attack(target entity) {
 		w.attackWith(target, w.strength*3)
 	} else if roll < 70 {
 		fmt.Printf("wizard cast \033[38;5;226mfireball\033[0m!")
-		dmg := rand.Float32() * scale(100, 4)
+		dmg := rand.Float64() * scale(100, 4)
 		w.attackWith(target, dmg)
 	} else if roll < 85 {
 		fmt.Printf("wizard cast \033[38;5;226mlightning\033[0m!")
-		dmg := 40 + rand.Float32()*scale(75, 2)
+		dmg := 40 + rand.Float64()*scale(75, 2)
 		w.attackWith(target, dmg)
 	} else if roll < 90 {
 		fmt.Printf("wizard summons \033[38;5;226mmeteor\033[0m!")
@@ -295,7 +295,7 @@ func (s *shardling) attack(target entity) {
 		s.attackWith(target, s.strength*1.1)
 	} else if roll < 80 {
 		fmt.Printf("shardling launched volley of shards!")
-		dmg := rand.Float32()*20 + s.strength
+		dmg := rand.Float64()*20 + s.strength
 		s.attackWith(target, dmg)
 	} else {
 		fmt.Printf("shardling impales you with crystal spike!")
@@ -336,19 +336,19 @@ func (g *genie) attack(target entity) {
 	}
 
 	if roll < 5 {
-		curse := 1 + rand.Float32()*10
+		curse := 1 + rand.Float64()*10
 		attr.hpcap = max(50, attr.hpcap-curse)
 
 		fmt.Print("genie placed a \033[38;5;226mcurse mark\033[0m! ")
 		fmt.Printf("hp cap reduced by %.1f\n", curse)
 	} else if roll < 10 {
-		curse := 0.25 + rand.Float32()*1.5
+		curse := 0.25 + rand.Float64()*1.5
 		attr.strength = max(5, attr.strength-curse)
 
 		fmt.Print("genie placed a \033[38;5;226mcurse mark\033[0m! ")
 		fmt.Printf("strength reduced by %.1f\n", curse)
 	} else if roll < 15 {
-		curse := 0.1 + rand.Float32()*1
+		curse := 0.1 + rand.Float64()*1
 		attr.defense = max(1, attr.defense-curse)
 
 		fmt.Print("genie placed a \033[38;5;226mcurse mark\033[0m! ")
@@ -406,7 +406,7 @@ func (c *celestial) attack(target entity) {
 		fmt.Println("the celestial being channels a \033[38;5;226mhealing aura\033[0m!")
 		c.effects["heal aura"] = 5
 	} else if roll < 30 {
-		fmt.Println("the celestial being cast a \033[38;5;226mblinding light\033[0m")
+		fmt.Print("the celestial being cast a \033[38;5;226mblinding light\033[0m!")
 		target.attr().effects["disoriented"] = 3
 		c.attackWith(target, c.strength*0.7)
 	} else if roll < 40 {
@@ -492,7 +492,7 @@ func (u *undead) attack(target entity) {
 		u.attackWith(target, u.strength*0.4)
 	} else if roll < 28 {
 		fmt.Print("the undead calls in fellow undead from underground!")
-		dmg := u.strength + rand.Float32()*scale(30, 4)
+		dmg := u.strength + rand.Float64()*scale(30, 4)
 		u.attackWith(target, dmg)
 	} else if roll < 35 {
 		fmt.Print("the undead bites down on the target's leg!")
@@ -635,11 +635,11 @@ func (i *infernal) attack(target entity) {
 		fmt.Print(messages[rand.IntN(len(messages))])
 		i.attackWith(target, i.strength)
 	} else if roll < 40 {
-		str := 1 + rand.Float32()*(i.strength/10)
+		str := 1 + rand.Float64()*(i.strength/10)
 		i.strength += str
 		fmt.Printf("the infernal \033[38;5;226menhanced\033[0m itself with molten energy, +%.1f strength!\n", str)
 	} else if roll < 50 {
-		def := 4 + rand.Float32()*(i.defense/10)
+		def := 4 + rand.Float64()*(i.defense/10)
 		i.defense += def
 		fmt.Printf("the infernal uses \033[38;5;226mmagma shield\033[0m, +%.1f defense!\n", def)
 	} else {

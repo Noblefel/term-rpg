@@ -7,8 +7,8 @@ import (
 func TestNewPlayer(t *testing.T) {
 	p := NewPlayer()
 
-	if p.hpcap != 250 {
-		t.Errorf("default hpcap should be 250, got %.1f", p.hpcap)
+	if p.hpcap != 200 {
+		t.Errorf("default hpcap should be 200, got %.1f", p.hpcap)
 	}
 
 	if p.defense != 15 {
@@ -418,6 +418,34 @@ func TestPlayer_Skill(t *testing.T) {
 		}
 	})
 
+	t.Run("devour", func(t *testing.T) {
+		i := find("devour")
+		p1 := newTestPlayer()
+		p2 := newTestPlayer()
+		p1.hp = 0
+		p1.skill(i, p2)
+
+		dmg := p1.strength * 1.5
+		if 100-p2.hp != dmg {
+			t.Errorf("damage should be %.1f (150%% strength), got %.1f", dmg, 100-p2.hp)
+		}
+
+		heal := p1.hpcap * 0.05
+		if p1.hp != heal {
+			t.Errorf("should heal by %.1f (5%% hpcap), got %.1f", heal, p1.hp)
+		}
+	})
+
+	t.Run("vitality", func(t *testing.T) {
+		i := find("vitality")
+		p := newTestPlayer()
+		p.skill(i, p)
+
+		if p.effects["vitality"] != 5 {
+			t.Error("should get vitality for 5 turns, got", p.effects["vitality"])
+		}
+	})
+
 	t.Run("barrier", func(t *testing.T) {
 		i := find("barrier")
 		p := newTestPlayer()
@@ -545,7 +573,7 @@ func TestPlayer_Train(t *testing.T) {
 		v += p.strength
 		v += p.defense
 		v += p.agility
-		v += float32(p.energycap)
+		v += float64(p.energycap)
 
 		if v != 0 {
 			t.Errorf("attributes should not be increased, %+v", p.attributes)
@@ -703,7 +731,7 @@ func TestPlayer_useWeapon(t *testing.T) {
 		dmg := 100 + 100*0.05
 		got := p.useWeapon(100, p)
 
-		if got != float32(dmg) {
+		if got != dmg {
 			t.Errorf("damage should be %.1f (5%% bonus), got %.1f", dmg, got)
 		}
 	})
@@ -737,7 +765,7 @@ func TestPlayer_useWeapon(t *testing.T) {
 
 		dmg := 100 + 100*0.1
 		got := p.useWeapon(100, p)
-		if got != float32(dmg) {
+		if got != dmg {
 			t.Errorf("damage should be %.1f (10%% bonus), got %.1f", dmg, got)
 		}
 	})
@@ -749,8 +777,19 @@ func TestPlayer_useWeapon(t *testing.T) {
 
 		dmg := 10 + p.hp*0.05
 		got := p.useWeapon(10, p)
-		if got != float32(dmg) {
+		if got != dmg {
 			t.Errorf("damage should be %.1f (5%% target hp), got %.1f", dmg, got)
+		}
+	})
+
+	t.Run("daunting mace", func(t *testing.T) {
+		p := newTestPlayer()
+		p.weapon = find("daunting mace")
+
+		dmg := p.strength + p.hpcap*0.07
+		got := p.useWeapon(p.strength, p)
+		if got != dmg {
+			t.Errorf("damage should be %.1f (+7%% self hp cap as damage), got %.1f", dmg, got)
 		}
 	})
 
@@ -795,13 +834,29 @@ func TestPlayer_useWeapon(t *testing.T) {
 		}
 	})
 
+	t.Run("lance", func(t *testing.T) {
+		p := newTestPlayer()
+		p.weapon = find("lance")
+
+		dmg := p.strength * 1.5
+		got := p.useWeapon(p.strength, p)
+		if got != dmg {
+			t.Errorf("damage should be %.1f (50%% bonus), got %.1f", dmg, got)
+		}
+
+		got = p.useWeapon(p.strength, p)
+		if got != p.strength {
+			t.Errorf("damage should not be modified again, got %.1f", got)
+		}
+	})
+
 	t.Run("obsidian warhammer", func(t *testing.T) {
 		p := newTestPlayer()
 		p.weapon = find("obsidian warhammer")
 
 		dmg := 100 + 100*0.2
 		got := p.useWeapon(100, p)
-		if got != float32(dmg) {
+		if got != dmg {
 			t.Errorf("damage should be %.1f (20%% bonus), got %.1f", dmg, got)
 		}
 	})
@@ -825,7 +880,7 @@ func TestPlayer_useWeapon(t *testing.T) {
 
 		dmg := 10 + p.hp*0.15
 		got := p.useWeapon(10, p)
-		if got != float32(dmg) {
+		if got != dmg {
 			t.Errorf("damage should be %.1f (15%% target hp), got %.1f", dmg, got)
 		}
 	})
@@ -842,14 +897,141 @@ func TestPlayer_useWeapon(t *testing.T) {
 		}
 	})
 
+	t.Run("vanguard lance", func(t *testing.T) {
+		p := newTestPlayer()
+		p.weapon = find("vanguard lance")
+
+		dmg := p.strength * 2
+		got := p.useWeapon(p.strength, p)
+		if got != dmg {
+			t.Errorf("damage should be %.1f (100%% bonus), got %.1f", dmg, got)
+		}
+
+		got = p.useWeapon(p.strength, p)
+		if got != p.strength {
+			t.Errorf("damage should not be modified again, got %.1f", got)
+		}
+	})
+
 	t.Run("earthbreaker", func(t *testing.T) {
 		p := newTestPlayer()
 		p.weapon = find("earthbreaker")
 
 		dmg := 100 + 100*0.25
 		got := p.useWeapon(100, p)
-		if got != float32(dmg) {
+		if got != dmg {
 			t.Errorf("damage should be %.1f (25%% bonus), got %.1f", dmg, got)
+		}
+	})
+}
+
+func TestPlayer_UseArmor(t *testing.T) {
+	find := func(name string) int {
+		for i, w := range armory {
+			if w.name == name {
+				return i
+			}
+		}
+		panic("no armor found")
+	}
+
+	t.Run("spiky armor", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("spiky armor")
+		p.useArmor(1)
+
+		if p.effects["reflect small"] == 0 {
+			t.Error("should get reflect small effect")
+		}
+	})
+
+	t.Run("crystal armor", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("crystal armor")
+		p.useArmor(1)
+
+		if p.effects["reflect small"] == 0 {
+			t.Error("should get reflect small effect")
+		}
+	})
+
+	t.Run("enchanted plate", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("enchanted plate")
+
+		dmg := 10 - 10*0.08
+		got := p.useArmor(10)
+		if got != dmg {
+			t.Errorf("damage should be %.1f (8%% reduction), got %.1f", dmg, got)
+		}
+	})
+
+	t.Run("deepsea mantle", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("deepsea mantle")
+
+		dmg := p.hpcap * 0.18
+		got := p.useArmor(99999) // to make sure
+		if got != dmg {
+			t.Errorf("damage should be %.1f (cannot exceed 18%% hp cap), got %.1f", dmg, got)
+		}
+	})
+
+	t.Run("mythril plate", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("mythril plate")
+
+		dmg := 10 - 10*0.16
+		got := p.useArmor(10)
+		if got != dmg {
+			t.Errorf("damage should be %.1f (16%% reduction), got %.1f", dmg, got)
+		}
+	})
+
+	t.Run("void mantle", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("void mantle")
+
+		dmg := p.hpcap * 0.12
+		got := p.useArmor(99999) // to make sure
+		if got != dmg {
+			t.Errorf("damage should be %.1f (cannot exceed 12%% hp cap), got %.1f", dmg, got)
+		}
+	})
+
+	t.Run("energy shield", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("energy shield")
+
+		dmg := 10 - 10*0.37
+		got := p.useArmor(10)
+		if got != dmg {
+			t.Errorf("damage should be %.1f (37%% reduction), got %.1f", dmg, got)
+		}
+
+		if p.effects["energy shield"] != 4 {
+			t.Errorf("should get cooldown of 4 turn, got %d", p.effects["energy shield"])
+		}
+	})
+
+	t.Run("amethyst armor", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("amethyst armor")
+		p.useArmor(1)
+
+		if p.effects["reflect high"] == 0 {
+			t.Error("should get reflect high effect")
+		}
+	})
+
+	t.Run("conqueror's armor", func(t *testing.T) {
+		p := newTestPlayer()
+		p.armor = find("conqueror's armor")
+
+		dmg := 10 - 10*0.08
+		got := p.useArmor(10)
+		if got != dmg {
+			t.Errorf("damage should be %.1f (8%% reduction), got %.1f", dmg, got)
 		}
 	})
 }
@@ -965,7 +1147,6 @@ func newTestPlayer() *Player {
 	p.energy = 20
 	p.energycap = 20
 	p.perk = -1
-	p.weapon = -1
 	p.effects = make(map[string]int)
 	return &p
 }

@@ -39,6 +39,17 @@ func TestAttributes_AttackWith(t *testing.T) {
 		}
 	})
 
+	t.Run("vitality effect", func(t *testing.T) {
+		target.hp = 100
+		attacker.effects["vitality"] = 1
+		attacker.attackWith(target, 10)
+		clear(attacker.effects)
+
+		if 100-target.hp != 10.5 {
+			t.Errorf("damage should be 105 (5%% bonus), got %.1f", 100-target.hp)
+		}
+	})
+
 	t.Run("weakened effect", func(t *testing.T) {
 		target.hp = 100
 		attacker.effects["weakened"] = 1
@@ -73,15 +84,42 @@ func TestAttributes_AttackWith(t *testing.T) {
 		}
 	})
 
+	t.Run("reflect small", func(t *testing.T) {
+		target.effects["reflect small"] = 1
+		attacker.hp = 10
+		attacker.hpcap = 10
+		attacker.strength = 10
+		attacker.attack(target)
+		clear(target.effects)
+
+		if !equal(10-attacker.hp, 3) {
+			t.Errorf("should inflict 3 damage (30%% reflection), got %.1f", 10-attacker.hp)
+		}
+	})
+
 	t.Run("reflect", func(t *testing.T) {
 		target.effects["reflect"] = 1
 		attacker.hp = 10
 		attacker.hpcap = 10
 		attacker.strength = 10
 		attacker.attack(target)
+		clear(target.effects)
 
-		if !equal(10-attacker.hp, 3) {
-			t.Errorf("should inflict 3 damage (30%% reflection), got %.1f", 10-attacker.hp)
+		if !equal(10-attacker.hp, 6) {
+			t.Errorf("should inflict 6 damage (60%% reflection), got %.1f", 10-attacker.hp)
+		}
+	})
+
+	t.Run("reflect high", func(t *testing.T) {
+		target.effects["reflect high"] = 1
+		attacker.hp = 10
+		attacker.hpcap = 10
+		attacker.strength = 10
+		attacker.attack(target)
+		clear(target.effects)
+
+		if !equal(10-attacker.hp, 9) {
+			t.Errorf("should inflict 9 damage (90%% reflection), got %.1f", 10-attacker.hp)
 		}
 	})
 }
@@ -158,6 +196,18 @@ func TestAttributes_ApplyEffects(t *testing.T) {
 		}
 	})
 
+	t.Run("vitality", func(t *testing.T) {
+		target.hpcap = 100
+		target.hp = 50
+		target.effects["vitality"] = 1
+		target.applyEffects()
+		clear(target.effects)
+
+		if !equal(target.hp, 55) {
+			t.Errorf("should heal by 5 (10%% lost hp), got %.1f", target.hp)
+		}
+	})
+
 	t.Run("heal aura", func(t *testing.T) {
 		target.hpcap = 100
 		target.hp = 0
@@ -165,7 +215,7 @@ func TestAttributes_ApplyEffects(t *testing.T) {
 		target.applyEffects()
 		clear(target.effects)
 
-		if target.hp != 7 {
+		if !equal(target.hp, 7) {
 			t.Errorf("should heal by 7 (7%% of hpcap), got %.1f", target.hp)
 		}
 	})
@@ -196,6 +246,17 @@ func TestAttributes_Damage(t *testing.T) {
 
 		if 100-target.hp != 0 {
 			t.Errorf("damage should be 0 (immune), got %.1f", 100-target.hp)
+		}
+	})
+
+	t.Run("vitality effect", func(t *testing.T) {
+		target.hp = 100
+		target.effects["vitality"] = 1
+		target.damage(10)
+		clear(target.effects)
+
+		if 100-target.hp != 9.5 {
+			t.Errorf("damage should be 9.5 (5%% reduction), got %.1f", 100-target.hp)
 		}
 	})
 

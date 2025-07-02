@@ -9,25 +9,25 @@ type entity interface {
 	attack(entity)
 	// attack with predefined damage.
 	// damage effects will be applied in here.
-	attackWith(entity, float32)
+	attackWith(entity, float64)
 	// apply effects that happens before player/enemy take action.
 	applyEffects()
 	// gets data like HP, strength...
 	attr() attributes
 	// niche case for attacks that ignore both defense & effects
-	setHP(float32)
+	setHP(float64)
 	// takes attack dmg and log it. minimal dmg is 1.
 	// defensive effects will be applied here.
-	damage(float32)
+	damage(float64)
 }
 
 type attributes struct {
 	name     string
-	hp       float32
-	hpcap    float32
-	strength float32
-	defense  float32
-	agility  float32
+	hp       float64
+	hpcap    float64
+	strength float64
+	defense  float64
+	agility  float64
 	effects  map[string]int //name - turn duration
 }
 
@@ -36,15 +36,19 @@ func (attr *attributes) attack(target entity) {
 	attr.attackWith(target, attr.strength)
 }
 
-func (attr *attributes) attackWith(target entity, dmg float32) {
+func (attr *attributes) attackWith(target entity, dmg float64) {
 	dodge := target.attr().agility*0.5 - attr.agility*0.15
-	if dodge > rand.Float32()*100 {
+	if dodge > rand.Float64()*100 {
 		fmt.Println(" \033[38;5;226mmiss\033[0m")
 		return
 	}
 
 	if attr.effects["strengthen"] > 0 {
 		dmg += dmg * 0.1
+	}
+
+	if attr.effects["vitality"] > 0 {
+		dmg += dmg * 0.05
 	}
 
 	if attr.effects["weakened"] > 0 {
@@ -56,15 +60,22 @@ func (attr *attributes) attackWith(target entity, dmg float32) {
 	}
 
 	crit := attr.agility - target.attr().agility*0.25
-	if crit > rand.Float32()*100 {
+	if crit > rand.Float64()*100 {
 		fmt.Print(" \033[38;5;226mcrit\033[0m")
 		dmg *= 1.75
 	}
 
 	target.damage(dmg)
 
-	if target.attr().effects["reflect"] > 0 {
-		fmt.Print("  reflected:")
+	// chain ifs to prevent multiple reflect damage
+	if target.attr().effects["reflect high"] > 0 {
+		fmt.Print("  reflected")
+		attr.damage(dmg * 0.9)
+	} else if target.attr().effects["reflect"] > 0 {
+		fmt.Print("  reflected")
+		attr.damage(dmg * 0.6)
+	} else if target.attr().effects["reflect small"] > 0 {
+		fmt.Print("  reflected")
 		attr.damage(dmg * 0.3)
 	}
 }
@@ -73,25 +84,31 @@ func (attr *attributes) applyEffects() {
 	// some effects ignore half defense because they are too high
 
 	if attr.effects["poisoned"] > 0 {
-		fmt.Printf("  %s suffer from poison:", attr.name)
+		fmt.Printf("  %s suffer from poison", attr.name)
 		attr.damage(attr.defense*0.5 + attr.hp*0.11 + 10)
 	}
 
 	if attr.effects["poisoned severe"] > 0 {
-		fmt.Printf("  %s suffer from severe poison:", attr.name)
+		fmt.Printf("  %s suffer from severe poison", attr.name)
 		attr.damage(attr.defense*0.5 + attr.hp*0.22 + 20)
 	}
 
 	if attr.effects["burning"] > 0 {
-		fmt.Printf("  %s suffer from burning:", attr.name)
+		fmt.Printf("  %s suffer from burning", attr.name)
 		attr.damage(attr.defense*0.5 + attr.hpcap*0.05 + 10)
 		delete(attr.effects, "frozen")
 	}
 
 	if attr.effects["burning severe"] > 0 {
-		fmt.Printf("  %s suffer from severe burning:", attr.name)
+		fmt.Printf("  %s suffer from severe burning", attr.name)
 		attr.damage(attr.defense*0.5 + attr.hpcap*0.1 + 20)
 		delete(attr.effects, "frozen")
+	}
+
+	if attr.effects["vitality"] > 0 {
+		heal := (attr.hpcap - attr.hp) * 0.1
+		attr.hp = min(attr.hp+heal, attr.hpcap)
+		fmt.Printf("  %s recover \033[38;5;83m%.1f\033[0m hp from vitality\n", attr.name, heal)
 	}
 
 	if attr.effects["heal aura"] > 0 {
@@ -105,16 +122,20 @@ func (attr attributes) attr() attributes {
 	return attr
 }
 
-func (attr *attributes) setHP(hp float32) {
+func (attr *attributes) setHP(hp float64) {
 	attr.hp = hp
 }
 
-func (attr *attributes) damage(dmg float32) {
+func (attr *attributes) damage(dmg float64) {
 	defense := attr.defense
 
 	if attr.effects["immunity"] > 0 {
 		fmt.Println(" \033[38;5;226mimmune\033[0m")
 		return
+	}
+
+	if attr.effects["vitality"] > 0 {
+		dmg -= dmg * 0.05
 	}
 
 	if attr.effects["barrier"] > 0 {

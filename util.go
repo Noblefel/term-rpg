@@ -16,7 +16,7 @@ func clearScreen() {
 	fmt.Printf("\033[J")
 }
 
-func bars(length int, val, cap float32) [2]string {
+func bars(length int, val, cap float64) [2]string {
 	val = max(val, 0)
 	cap = max(cap, 0)
 
@@ -33,7 +33,7 @@ func bars(length int, val, cap float32) [2]string {
 	return [2]string{bar1, bar2}
 }
 
-func timer(ms float32) {
+func timer(ms float64) {
 	for ms > 0 {
 		fmt.Printf(" %0.1fs", ms/1000)
 		time.Sleep(90 * time.Millisecond)
@@ -43,8 +43,8 @@ func timer(ms float32) {
 	}
 }
 
-func scale(base, growth float32) float32 {
-	return base + growth*float32(stage)
+func scale(base, growth float64) float64 {
+	return base + growth*float64(stage)
 }
 
 func roll() int {
@@ -60,11 +60,11 @@ type savedata struct {
 	Gold   int     `json:"gold"`
 	Weapon int     `json:"weapon"`
 	Skills [5]int  `json:"skills"`
-	Hp     float32 `json:"hp"`
-	Hpc    float32 `json:"hpc"`
-	Str    float32 `json:"str"`
-	Def    float32 `json:"def"`
-	Agi    float32 `json:"agi"`
+	Hp     float64 `json:"hp"`
+	Hpc    float64 `json:"hpc"`
+	Str    float64 `json:"str"`
+	Def    float64 `json:"def"`
+	Agi    float64 `json:"agi"`
 	En     int     `json:"en"`
 	Enc    int     `json:"enc"`
 }

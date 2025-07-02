@@ -757,8 +757,6 @@ func TestInfernal(t *testing.T) {
 }
 
 // quick fix floating issue
-func equal(a, b float32) bool {
-	x := math.Round(float64(a) * 100)
-	y := math.Round(float64(b) * 100)
-	return x == y
+func equal(a, b float64) bool {
+	return math.Round(a*100) == math.Round(b*100)
 }

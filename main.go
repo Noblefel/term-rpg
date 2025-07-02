@@ -68,12 +68,13 @@ func menuWeaponStart() {
 	fmt.Println("----------------------------")
 
 	i := vivi.Choices(
-		"[1] sword    : +15 damage",
-		"[2] needle   : +10 damage, ignore 10% defense",
-		"[3] club     : +12 damage, +5% multiplier",
-		"[4] daggers  : +9 damage, +2 agility, -2 defense",
-		"[5] staff    : +8 damage, +2 energy cap",
-		"[6] gloves   : +6 damage, +4 defense",
+		"[1] no weapon ",
+		"[2] sword    : +15 damage",
+		"[3] needle   : +10 damage, ignore 10% defense",
+		"[4] club     : +12 damage, +5% multiplier",
+		"[5] daggers  : +9 damage, +2 agility, -2 defense",
+		"[6] staff    : +8 damage, +2 energy cap",
+		"[7] gloves   : +6 damage, +4 defense",
 	)
 
 	player.setWeapon(i)
@@ -154,10 +155,9 @@ func menuMain() {
 		clearScreen()
 		fmt.Printf(" Health : %s %.1f\n", player.attr().hpbar(), player.hp)
 		fmt.Printf(" Energy : %s %d\n", player.energybar(), player.energy)
-		fmt.Printf(" Perk   : %s \n", player.getperk())
+		fmt.Printf(" Perk   : %s (stage %d) \n", player.getperk(), stage+1)
 		fmt.Printf(" Gold   : %d \n", player.gold)
-		fmt.Printf(" Weapon : %s \n", weapons[player.weapon].name)
-		fmt.Printf(" Stage  : %d \n", stage+1)
+		fmt.Printf(" Gear   : %s - %s \n", weapons[player.weapon].name, armory[player.armor].name)
 		fmt.Println(" --------")
 
 		choice := vivi.Choices(
@@ -202,7 +202,7 @@ func menuAttributes() {
 		strength  = bars(40, player.strength, 400)
 		defense   = bars(40, player.defense, 150)
 		agility   = bars(40, player.agility, 100)
-		energycap = bars(40, float32(player.energycap), 40)
+		energycap = bars(40, float64(player.energycap), 40)
 	)
 
 	fmt.Printf("HP cap     :")
@@ -294,8 +294,9 @@ func menuTown() {
 		fmt.Println(" --------")
 		fmt.Printf(" Health : %s %.1f\n", player.attr().hpbar(), player.hp)
 		fmt.Printf(" Energy : %s %d\n", player.energybar(), player.energy)
-		fmt.Printf(" Perk   : %s \n", player.getperk())
+		fmt.Printf(" Perk   : %s (stage %d) \n", player.getperk(), stage+1)
 		fmt.Printf(" Gold   : %d \n", player.gold)
+		fmt.Printf(" Gear   : %s - %s \n", weapons[player.weapon].name, armory[player.armor].name)
 		fmt.Println(" -------- ")
 		fmt.Print("\033[s")
 
@@ -303,8 +304,9 @@ func menuTown() {
 			"[1] guest house ($5)",
 			"[2] training grounds ($10)",
 			"[3] weapon shop ",
-			"[4] switch perk ($34)",
-			"[5] go back",
+			"[4] armory shop",
+			"[5] switch perk ($34)",
+			"[6] go back",
 		)
 
 		fmt.Print("\033[u\033[0J")
@@ -335,6 +337,8 @@ func menuTown() {
 		case 2:
 			menuWeaponShop()
 		case 3:
+			menuArmoryShop()
+		case 4:
 			if player.gold < 34 {
 				fmt.Println(fail + "not enough gold to switch perk")
 				vivi.Choices("continue")
@@ -353,7 +357,7 @@ func menuTown() {
 			player.setPerk(newperk)
 			fmt.Println(success + "perk changed")
 			vivi.Choices("continue")
-		case 4:
+		case 5:
 			return
 		}
 	}
@@ -386,22 +390,72 @@ func menuWeaponShop() {
 			weapons[player.weapon].name,
 		)
 		// using fmt.Scan didnt work somehow
-		newindex, _ := strconv.Atoi(vivi.Password("#"))
-
-		if newindex == 0 {
+		input := vivi.Password("#")
+		if input == "" {
 			return
 		}
 
-		if newindex < 0 || newindex > len(weapons) {
+		newindex, _ := strconv.Atoi(input)
+		newindex--
+
+		if newindex < 0 || newindex >= len(weapons) {
 			fmt.Println(fail + "invalid weapon")
 			continue
 		}
 
-		newindex--
-
 		if player.gold >= weapons[newindex].cost {
 			player.gold -= weapons[newindex].cost
 			player.setWeapon(newindex)
+			return
+		}
+
+		fmt.Println(fail + "not enough gold")
+	}
+}
+
+func menuArmoryShop() {
+	var allarmor strings.Builder
+	tw := tabwriter.NewWriter(&allarmor, 0, 0, 2, ' ', tabwriter.Debug)
+	fmt.Fprintln(tw, "no\t name\t description\t cost")
+	fmt.Fprintln(tw, "--\t --\t --\t --")
+
+	for i, w := range armory {
+		fmt.Fprintf(tw, "%d\t %s\t %s\t %d\n",
+			i+1,
+			w.name,
+			w.desc,
+			w.cost,
+		)
+	}
+	tw.Flush()
+
+	clearScreen()
+	fmt.Println("\033[1mArmory shop\033[0m")
+	fmt.Println("------------------------")
+	fmt.Println(allarmor.String())
+
+	for {
+		fmt.Printf(
+			"trade \033[38;5;226m%s\033[0m with... (pick a number or empty to cancel) > ",
+			armory[player.armor].name,
+		)
+		// using fmt.Scan didnt work somehow
+		input := vivi.Password("#")
+		if input == "" {
+			return
+		}
+
+		newindex, _ := strconv.Atoi(input)
+		newindex--
+
+		if newindex < 0 || newindex >= len(armory) {
+			fmt.Println(fail + "invalid armor")
+			continue
+		}
+
+		if player.gold >= armory[newindex].cost {
+			player.gold -= armory[newindex].cost
+			player.setArmor(newindex)
 			return
 		}
 
@@ -472,22 +526,22 @@ func menuBattle(enemy entity, exploring bool) {
 				player.effects["stunned"] = 1
 				fmt.Println("  \033[38;5;226minsanity\033[0m: your mind is in disarray")
 			} else if roll < 17 {
-				n := -0.5 + rand.Float32()*1
+				n := -4 + rand.Float64()*8
 				player.hpcap = max(50, player.hpcap+n)
 				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f hp cap\n", n)
 			} else if roll < 24 {
-				n := -0.25 + rand.Float32()*0.5
+				n := -0.25 + rand.Float64()*0.5
 				player.strength = max(5, player.strength+n)
 				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f strength\n", n)
 			} else if roll < 31 {
-				n := -0.25 + rand.Float32()*0.5
+				n := -0.25 + rand.Float64()*0.5
 				player.defense = max(1, player.defense+n)
 				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f defense\n", n)
 			}
 		}
 
 		if player.perk == 8 && turn >= 6 {
-			enemy.attr().effects["ace"] = 2
+			enemy.attr().effects["ace"] = 99
 		}
 
 		player.applyEffects()
@@ -513,7 +567,7 @@ func menuBattle(enemy entity, exploring bool) {
 
 		if enemy.attr().hp <= 0 {
 			fmt.Println("you have \033[38;5;83mwon\033[0m the battle")
-			gold := scale(20, 10) + rand.Float32()*scale(20, 10)
+			gold := scale(20, 10) + rand.Float64()*scale(20, 10)
 			player.gold += int(gold)
 			fmt.Printf("got %.0f gold\n", gold)
 			vivi.Choices("return")
@@ -687,7 +741,7 @@ func exploreDeepForest() {
 
 	for i := 0; i < 10; i++ {
 		fmt.Print("exploring...")
-		timer(1000 + rand.Float32()*2000)
+		timer(1000 + rand.Float64()*2000)
 
 		fmt.Print("\r\033[K")
 		n := rand.IntN(80)
@@ -706,7 +760,7 @@ func exploreDeepForest() {
 			fmt.Println("Jackpot! you found a \033[38;5;226mstash\033[0m of gold!")
 		} else if n < 24 {
 			fmt.Print(success)
-			heal := 5 + rand.Float32()*5
+			heal := 5 + rand.Float64()*5
 			player.hp = min(player.hp+heal, player.hpcap)
 			fmt.Printf("You eat some berries, ")
 			fmt.Printf("recover \033[38;5;83m%.1f\033[0m hp\n", heal)
@@ -716,7 +770,7 @@ func exploreDeepForest() {
 			player.damage(player.hpcap * 0.04)
 		} else if n < 31 {
 			fmt.Print(success)
-			heal := 10 + rand.Float32()*10
+			heal := 10 + rand.Float64()*10
 			player.hp = min(player.hp+heal, player.hpcap)
 			fmt.Printf("You rest by a campfire, ")
 			fmt.Printf("recover \033[38;5;83m%.1f\033[0m hp\n", heal)
