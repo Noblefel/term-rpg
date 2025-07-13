@@ -48,17 +48,19 @@ func selectPerks() int {
 	fmt.Println("------------------------------------------")
 
 	return vivi.Choices(
-		"[1] 🛡️  Resilient  : increase overall defense",
-		"[2] ⚔️  Havoc      : +20% damage, but low starting gold & energy cap",
-		"[3] 🐻 Berserk    : more powerful the lower your hp is",
-		"[4] 🐇 Ingenious  : +2 energy cap, skill cooldown reduced by 2",
-		"[5] 🍹 Poisoner   : inflict poisoning effect at the start of battle",
-		"[6] ⚰️  Deadman    : inflict weaken effect at the start of battle",
-		"[7] 🏃 Survivor   : almost always succeed when fleeing",
-		"[8] 🎃 Insanity   : it can either go really well or really bad",
-		"[9] 🌩️  Shock      : start with ace but suffer from prolonged battle",
-		"[10] ❄️  Frigid    : attacks have small chance to freeze the enemy",
-		"[11] 🏹 Ranger    : guess the enemy to gain ace if correct",
+		"No perk",
+		"[1]  🛡️  Resilient  : increase overall defense",
+		"[2]  🔥 Havoc      : +20% damage, but low starting gold & energy cap",
+		"[3]  🐻 Berserk    : more powerful the lower your hp is",
+		"[4]  🐇 Ingenious  : +2 energy cap, skill cooldown reduced by 2",
+		"[5]  🍹 Poisoner   : inflict poisoning effect at the start of battle",
+		"[6]  ⚰️  Deadman    : inflict weaken effect at the start of battle",
+		"[7]  🏃 Survivor   : almost always succeed when fleeing",
+		"[8]  🎃 Insanity   : it can either go really well or really bad",
+		"[9]  🌩️  Shock      : start with ace but suffer from prolonged battle",
+		"[10] ❄️  Frigid     : attacks have small chance to freeze the enemy",
+		"[11] 🏹 Ranger     : guess the enemy to gain ace if correct",
+		"[12] ⚔️  Fencer     : basic attack will be done twice at a time ",
 	)
 }
 
@@ -155,32 +157,35 @@ func menuMain() {
 		clearScreen()
 		fmt.Printf(" Health : %s %.1f\n", player.attr().hpbar(), player.hp)
 		fmt.Printf(" Energy : %s %d\n", player.energybar(), player.energy)
-		fmt.Printf(" Perk   : %s (stage %d) \n", player.getperk(), stage+1)
+		fmt.Printf(" Perk   : %s (stage %d) \n", perks[player.perk], stage+1)
 		fmt.Printf(" Gold   : %d \n", player.gold)
 		fmt.Printf(" Gear   : %s - %s \n", weapons[player.weapon].name, armory[player.armor].name)
 		fmt.Println(" --------")
 
 		choice := vivi.Choices(
 			"[1] 🗺️  battle",
-			"[2] 🏕️  deep forest",
-			"[3] 📋 view attributes",
-			"[4] 📋 equip skills",
-			"[5] 🏘️  visit town",
-			"[6] save game",
+			"[2] 🗺️  quick battle",
+			"[3] 🏕️  deep forest",
+			"[4] 📋 view attributes",
+			"[5] 📋 equip skills",
+			"[6] 🏘️  visit town",
+			"[7] save game",
 		)
 
 		switch choice {
 		case 0:
 			menuBattle(spawn(), false)
 		case 1:
-			exploreDeepForest()
+			quickBattle(spawn())
 		case 2:
-			menuAttributes()
+			exploreDeepForest()
 		case 3:
-			menuSkills()
+			menuAttributes()
 		case 4:
-			menuTown()
+			menuSkills()
 		case 5:
+			menuTown()
+		case 6:
 			if err := save(); err != nil {
 				fmt.Println("error:", err)
 			} else {
@@ -198,11 +203,11 @@ func menuAttributes() {
 	fmt.Println("----------")
 
 	var (
-		hpcap     = bars(40, player.hpcap, 750)
-		strength  = bars(40, player.strength, 400)
-		defense   = bars(40, player.defense, 150)
-		agility   = bars(40, player.agility, 100)
-		energycap = bars(40, float64(player.energycap), 40)
+		hpcap     = bars(42, player.hpcap, 750)
+		strength  = bars(42, player.strength, 400)
+		defense   = bars(42, player.defense, 150)
+		agility   = bars(42, player.agility, 100)
+		energycap = bars(42, float64(player.energycap), 40)
 	)
 
 	fmt.Printf("HP cap     :")
@@ -294,7 +299,7 @@ func menuTown() {
 		fmt.Println(" --------")
 		fmt.Printf(" Health : %s %.1f\n", player.attr().hpbar(), player.hp)
 		fmt.Printf(" Energy : %s %d\n", player.energybar(), player.energy)
-		fmt.Printf(" Perk   : %s (stage %d) \n", player.getperk(), stage+1)
+		fmt.Printf(" Perk   : %s (stage %d) \n", perks[player.perk], stage+1)
 		fmt.Printf(" Gold   : %d \n", player.gold)
 		fmt.Printf(" Gear   : %s - %s \n", weapons[player.weapon].name, armory[player.armor].name)
 		fmt.Println(" -------- ")
@@ -463,21 +468,22 @@ func menuArmoryShop() {
 	}
 }
 
-func menuBattle(enemy entity, exploring bool) {
-	defer clear(player.effects)
-	defer clear(enemy.attr().effects)
-	turn := 1
-
-	if player.perk == 4 {
+// apply starting effects here
+func battleStaging(enemy entity, exploring bool) {
+	if player.is("Poisoner") {
 		enemy.attr().effects["poisoned"] = 5
 	}
 
-	if player.perk == 5 {
+	if player.is("Deadman") {
 		enemy.attr().effects["weakened"] = 3
 	}
 
-	if player.perk == 8 {
+	if player.is("Shock") {
 		player.effects["ace"] = 2
+	}
+
+	if player.is("Ranger") && !exploring {
+		menuRangerGuess(enemy)
 	}
 
 	name := enemy.attr().name
@@ -486,17 +492,24 @@ func menuBattle(enemy entity, exploring bool) {
 		player.effects["weakened"] = 3
 	}
 
-	if name == "undead" && player.perk == 5 {
+	if name == "undead" && player.is("Deadman") {
 		player.effects["ace"] = 99
 	}
 
-	if (name == "infernal" || name == "demon") && player.perk == 9 {
+	if name == "jungle warrior" && player.is("Poisoner") {
 		enemy.attr().effects["ace"] = 99
 	}
 
-	if player.perk == 10 && !exploring {
-		menuRangerGuess(enemy)
+	if (name == "infernal" || name == "demon") && player.is("Frigid") {
+		enemy.attr().effects["ace"] = 99
 	}
+}
+
+func menuBattle(enemy entity, exploring bool) {
+	defer clear(player.effects)
+	defer clear(enemy.attr().effects)
+	battleStaging(enemy, exploring)
+	turn := 1
 
 	for {
 		clearScreen()
@@ -508,15 +521,15 @@ func menuBattle(enemy entity, exploring bool) {
 		fmt.Printf("health : %s %.1f\n", enemy.attr().hpbar(), enemy.attr().hp)
 		fmt.Println("--------")
 
-		if player.effects["ace"] > 0 {
+		if player.has("ace") {
 			fmt.Println("  you have an \033[38;5;226mace\033[0m")
 		}
 
-		if enemy.attr().effects["ace"] > 0 {
+		if enemy.attr().has("ace") {
 			fmt.Printf("  %s have an \033[38;5;226mace\033[0m\n", enemy.attr().name)
 		}
 
-		if player.perk == 7 {
+		if player.is("Insanity") {
 			roll := roll()
 
 			if roll < 1 {
@@ -540,19 +553,21 @@ func menuBattle(enemy entity, exploring bool) {
 			}
 		}
 
-		if player.perk == 8 && turn >= 6 {
+		if player.is("Shock") && turn >= 6 {
 			enemy.attr().effects["ace"] = 99
 		}
 
 		player.applyEffects()
 
-		if player.effects["stunned"] > 0 {
+		if player.has("frozen") {
+			fmt.Println(fail + "you are frozen")
+		} else if player.has("stunned") {
 			fmt.Println(fail + "you are stunned")
 		} else {
 			menuPlayerActions(enemy)
 		}
 
-		if player.effects["fled"] > 0 {
+		if player.has("fled") {
 			vivi.Choices("return")
 			return
 		}
@@ -575,10 +590,10 @@ func menuBattle(enemy entity, exploring bool) {
 			return
 		}
 
-		if enemy.attr().effects["stunned"] > 0 {
-			fmt.Printf(fail+"%s is stunned\n", enemy.attr().name)
-		} else if enemy.attr().effects["frozen"] > 0 {
+		if enemy.attr().has("frozen") && !enemy.attr().has("frozen immunity") {
 			fmt.Printf(fail+"%s is frozen\n", enemy.attr().name)
+		} else if enemy.attr().has("stunned") {
+			fmt.Printf(fail+"%s is stunned\n", enemy.attr().name)
 		} else {
 			fmt.Printf("waiting for enemy... ")
 			timer(2000)
@@ -598,7 +613,7 @@ func menuBattle(enemy entity, exploring bool) {
 			return
 		}
 
-		if player.effects["ace"] > 0 {
+		if player.has("ace") {
 			player.energy++
 		}
 
@@ -606,6 +621,89 @@ func menuBattle(enemy entity, exploring bool) {
 		enemy.attr().decrementEffect()
 		player.decrementEffect()
 		vivi.Choices("next turn")
+		turn++
+	}
+}
+
+func quickBattle(enemy entity) {
+	defer clear(player.effects)
+	defer clear(enemy.attr().effects)
+	battleStaging(enemy, false)
+	clearScreen()
+	turn := 1
+
+	fmt.Println("----- QUICK BATTLE -----")
+	fmt.Printf("you encountered %s \n", enemy.attr().name)
+
+	for {
+		if player.is("Insanity") {
+			roll := roll()
+
+			if roll < 1 {
+				fmt.Println("  \033[38;5;226minsanity\033[0m: you somehow annihilate the enemy!")
+				enemy.setHP(0)
+			} else if roll < 10 {
+				player.effects["stunned"] = 1
+				fmt.Println("  \033[38;5;226minsanity\033[0m: your mind is in disarray")
+			} else if roll < 17 {
+				n := -4 + rand.Float64()*8
+				player.hpcap = max(50, player.hpcap+n)
+				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f hp cap\n", n)
+			} else if roll < 24 {
+				n := -0.25 + rand.Float64()*0.5
+				player.strength = max(5, player.strength+n)
+				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f strength\n", n)
+			} else if roll < 31 {
+				n := -0.25 + rand.Float64()*0.5
+				player.defense = max(1, player.defense+n)
+				fmt.Printf("  \033[38;5;226minsanity\033[0m: you get %.1f defense\n", n)
+			}
+		}
+
+		if player.is("Shock") && turn >= 6 {
+			enemy.attr().effects["ace"] = 99
+		}
+
+		player.applyEffects()
+
+		if player.has("frozen") {
+			fmt.Println(fail + "you are frozen")
+		} else if player.has("stunned") {
+			fmt.Println(fail + "you are stunned")
+		} else {
+			player.attack(enemy)
+		}
+
+		enemy.applyEffects()
+
+		if enemy.attr().hp <= 0 {
+			fmt.Println("--------------------")
+			fmt.Println("you have \033[38;5;83mwon\033[0m the battle")
+			gold := scale(20, 10) + rand.Float64()*scale(20, 10)
+			player.gold += int(gold)
+			fmt.Printf("got %.0f gold\n", gold)
+			vivi.Choices("return")
+			stage++
+			return
+		}
+
+		if enemy.attr().has("frozen") && !enemy.attr().has("frozen immunity") {
+			fmt.Printf(fail+"%s is frozen\n", enemy.attr().name)
+		} else if enemy.attr().has("stunned") {
+			fmt.Printf(fail+"%s is stunned\n", enemy.attr().name)
+		} else {
+			enemy.attack(player)
+		}
+
+		if player.hp <= 0 {
+			fmt.Println("--------------------")
+			fmt.Println("you have \033[38;5;196mlost\033[0m the battle")
+			vivi.Choices("return")
+			return
+		}
+
+		enemy.attr().decrementEffect()
+		player.decrementEffect()
 		turn++
 	}
 }
@@ -623,11 +721,11 @@ func menuRangerGuess(enemy entity) {
 	fmt.Println("-------------")
 
 	names := []string{
-		"knight", "wizard", "changeling",
-		"vampire", "demon", "shardling",
-		"genie", "celestial", "shapeshift",
-		"undead", "scorpion", "goblin",
-		"infernal",
+		"knight", "wizard", "changeling", "vampire",
+		"demon", "shardling", "genie", "celestial",
+		"shapeshift", "undead", "scorpion", "goblin",
+		"infernal", "vine monster", "arctic warrior",
+		"jungle warrior", "leech monster",
 	}
 
 	rand.Shuffle(len(names), func(i, j int) {
@@ -689,11 +787,11 @@ func menuPlayerActions(enemy entity) {
 
 				cost := skills[i].cost
 
-				if player.effects["confused"] > 0 {
+				if player.has("confused") {
 					cost++
 				}
 
-				if cost > player.energy || player.effects["cd"+skills[i].name] > 0 {
+				if cost > player.energy || player.has("cd"+skills[i].name) {
 					choice = "\033[38;5;196m" + choice
 				} else {
 					choice = "\033[38;5;226m" + choice
@@ -702,15 +800,15 @@ func menuPlayerActions(enemy entity) {
 				choices = append(choices, choice)
 			}
 
-			if player.effects["confused"] > 0 {
+			if player.has("confused") {
 				fmt.Println("warning, you are \033[38;5;226mconfused\033[0m! energy cost increased by 1")
 			}
 
-			if player.perk == 2 && player.hp/player.hpcap <= 0.2 {
+			if player.is("Berserk") && player.hp/player.hpcap <= 0.2 {
 				fmt.Println("berserk perk bonus! cooldown decreased by 1")
 			}
 
-			if player.perk == 7 {
+			if player.is("Insanity") {
 				fmt.Println("insanity perk! cooldown will be randomized")
 			}
 

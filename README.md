@@ -1,26 +1,26 @@
 ### Player perks
 
-| Name         | Effect                                                        |
-| ------------ | ------------------------------------------------------------- |
-| 🛡️ Resilient | increase overall defense                                      |
-| ⚔️ Havoc     | +20% damage, but low starting hp & energy cap                 |
-| 🐻 Berserk   | more powerful the lower your hp is                            |
-| 🐇 Ingenious | +2 energy cap, skill cooldown is reduced by 2                 |
-| 🍹 Poisoner  | inflict poisoning effect at the start of battle               |
-| ⚰️ Deadman   | inflict weaken effect at the start of battle                  |
-| 🏃 Survivor  | almost always succeed when fleeing                            |
-| 🎃 Insanity  | it can either go really well or really bad                    |
-| 🌩️ Shock     | start with **ace** but suffer from prolonged battle           |
-| ❄️ Frigid    | attacks have small chance to **freeze** the enemy             |
-| 🏹 Ranger    | guess the enemy to gain ace if correct                        |
-| 🌙 Coven     | (tba) unlock special skills, but -10% damage & extra cooldown |
-| 🦅 Falconry  | (tba) get a companion that assist you in battle               |
+| Name         | Effect                                              |
+| ------------ | --------------------------------------------------- |
+| 🛡️ Resilient | increase overall defense                            |
+| 🔥 Havoc     | +20% damage, but low starting hp & energy cap       |
+| 🐻 Berserk   | more powerful the lower your hp is                  |
+| 🐇 Ingenious | +2 energy cap, skill cooldown is reduced by 2       |
+| 🍹 Poisoner  | inflict poisoning effect at the start of battle     |
+| ⚰️ Deadman   | inflict weaken effect at the start of battle        |
+| 🏃 Survivor  | almost always succeed when fleeing                  |
+| 🎃 Insanity  | it can either go really well or really bad          |
+| 🌩️ Shock     | start with **ace** but suffer from prolonged battle |
+| ❄️ Frigid    | attacks have small chance to **freeze** the enemy   |
+| 🏹 Ranger    | guess the enemy to gain **ace** if correct          |
+| ⚔️ Fencer    | basic attack will be done twice at a time           |
+| 🌙 Coven     | (tba) unlock special skills                         |
 
-For **resilient**, you get 10% damage reduction plus small extra hp cap and defense, also incoming damage cannot exceed 12% of your hp cap.
+For **resilient**, you get 10% damage reduction plus small extra hp cap and defense.
 
 For **berserk**, bonuses starts to apply when your hp gets below 40%.
 
-For **poisoner**, inflicted effect will stay for 5 turns.
+For **poisoner**, inflicted effect will stay for 5 turns. Jungle warrior will get an **ace** when facing you
 
 For **deadman**, inflicted effect will stay for 3 turns. Also you get an **ace** when facing Undeads.
 
@@ -34,32 +34,37 @@ For **frigid**, you also get small negative agility. Infernal and demon will get
 
 For **ranger**, before battle start you have to guess from 3 enemy names presented, plus you can see their attributes (doesnt apply when exploring). If your guess is correct you get an **ace** for 5 turns. BUT if its wrong, it will be given to the enemy instead.
 
+For **fencer**, basic attack use 55% strength but will be done 2 times.
+
 For **coven** (to be added), each attack will inflict 0-3 stack of "hex" which can be used to cast special skills. Clerics will get an **ace** when facing you.
 
 ### Enemies
 
-| Name            | Summary                                                   | Special                           |
-| --------------- | --------------------------------------------------------- | --------------------------------- |
-| Knight 🛡️       | decent all-rounder with good defense                      | defense buff, strengthen          |
-| Wizard 🧙       | lacks in traditional defense, makes it up with spells     | heal, immunity, barrier, confuse  |
-| Changeling 🎭   | will morph itself to be like you, atleast tried           | attribute copy x 0.75             |
-| Vampire 🧛      | enemy that can recovers hp on every attack                | lifesteal, poison                 |
-| Demon 👹        | powerful enemy that cares little about your defense       | ignore defense, burning           |
-| Shardling ⛰️    | has a tough defense and will reflect damage               | permanent reflect                 |
-| Evil Genie 🔮   | can straight up **curse** you permanently                 | debuff, illusion, force-field     |
-| Celestial ☄️    | a being from beyond this world with tons of hp            | disorient, heal aura, burning     |
-| Shapeshift 🎭   | a better, more deadlier version of changeling             | attribute copy x 1.25             |
-| Undead 🧟       | even the mere sight of this enemy weakens you             | weaken, poison                    |
-| Scorpion 🦂     | venomous enemy that pierce through a portion of armor     | severe poison, ignore 30% defense |
-| Goblin 🗡️       | good luck trying to land a succesful hit                  | confuse, high agility             |
-| Infernal 🔥     | this creature was born from the strongest of fires        | severe burning, buff              |
-| Vine Monster 🌲 | (tba) attacks have high chance to ensnare you             | stun, reflect (small), heal aura  |
-| Pirate 🏴‍☠️       | (tba) can straight up **steal** your gold                 | steal                             |
-| Void entity 🌀  | (tba) always absorp a portion of hp no matter what you do | ignore defense & effects          |
-| Warforge 👾     | (tba) can switch between protocols that boost attributes  | (see below)                       |
-| Werewolf 🐺     | (tba) starts off weak until it gets **awakened**          | extreme buff, bleeding            |
-| Cleric ☀️       | (tba) may convert "purify" stack into **MASSIVE** dmg     | **exorcism**, reflect (high)      |
-| Artificer 🛠️    | (tba) advanced equipments gave them **unique** abilities  | swap hp, lay traps, force-field   |
+| Name              | Summary                                                       | Special                           |
+| ----------------- | ------------------------------------------------------------- | --------------------------------- |
+| Knight 🛡️         | decent all-rounder with good defense                          | defense buff, strengthen          |
+| Wizard 🧙         | lacks in traditional defense, makes it up with spells         | heal, immunity, barrier, confuse  |
+| Changeling 🎭     | will morph itself to be like you, atleast tried               | attribute copy x 0.75             |
+| Vampire 🧛        | enemy that can recovers hp on every attack                    | lifesteal, poison                 |
+| Demon 👹          | powerful enemy that cares little about your defense           | ignore defense, burning           |
+| Shardling ⛰️      | has a tough defense and will reflect damage                   | permanent reflect                 |
+| Evil Genie 🔮     | can straight up **curse** you permanently                     | curse, illusion, force-field      |
+| Celestial ☄️      | a being from beyond this world with tons of hp                | disorient, heal aura, burning     |
+| Shapeshift 🎭     | a better, more deadlier version of changeling                 | attribute copy x 1.25             |
+| Undead 🧟         | even the mere sight of this enemy weakens you                 | weaken, poison                    |
+| Scorpion 🦂       | venomous enemy that pierce through a portion of armor         | severe poison, ignore 30% defense |
+| Goblin 🗡️         | good luck trying to land a succesful hit                      | confuse, high agility             |
+| Infernal 🔥       | this creature was born from the strongest of fires            | severe burning, burn immune, buff |
+| Vine Monster 🌲   | attacks have high chance to ensnare you                       | stun, reflect (low)               |
+| Arctic Warrior ❄️ | a fighter from distant land accustomed to coldness            | frozen immune, freeze             |
+| Jungle Warrior 🌴 | a fighter from distant land with ancestral blessing           | poison immune, shiver, vitality   |
+| Leech Monster 🩸  | no hp is too high for this one, but struggle against armor    | drain, bleeding                   |
+| Pirate 🏴‍☠️         | (tba) can straight up **steal** your gold                     | steal, bleeding                   |
+| Gladiator ⚔️      | (tba) their attack deal 60% damage but will be done twice     | double-attack, strengthen         |
+| Sorcerer 🌀       | (tba) powerful enemy with astral attacks that bypass anything | ignore defense & effects          |
+| Warforge 👾       | (tba) can switch between protocols that boost attributes      | (see below)                       |
+| Cleric ☀️         | (tba) may convert "purify" stack into **MASSIVE** dmg         | **exorcism**, reflect (high)      |
+| Artificer 🛠️      | (tba) advanced equipments gave them **unique** abilities      | swap hp, lay traps, force-field   |
 
 For **warforge** may switch into OMEGA protocol to increase strength by 30%, DELTA protocol that doubled defense, and SWIFT protocol for a +20 agility. Special abilities include: self-destruct as OMEGA, heal as DELTA, disorient as SWIFT.
 
@@ -78,6 +83,7 @@ For **warforge** may switch into OMEGA protocol to increase strength by 30%, DEL
 | fireball      | deal moderate amount of damage and inflict burning                    |
 | meteor strike | deal huge amount of damage                                            |
 | strengthen    | attack 100% strength to increase damage by 10% for 3 turns            |
+| focus attack  | attack 100% strength to get focus state for 3 turns                   |
 | devour        | attack 150% strength and heal by 5% hp cap                            |
 | vitality      | get vitality effect for 5 turns                                       |
 | barrier       | reduce incoming damage by 40% for 2 turns                             |
@@ -93,7 +99,7 @@ For **warforge** may switch into OMEGA protocol to increase strength by 30%, DEL
 | hex cleanse   | (coven) 5 hex to remove all effects & cd on you (doesnt consume turn) |
 | hex blessing  | (coven) 6 hex to get instant **ace** for 2 turn (doesnt consume turn) |
 | hex barrier   | (coven) 8 hex to grant 65% damage reduction for 3 turns               |
-| hex curse     | (coven) 6 hex to inflict poison, weaken, and burning for 3 turns      |
+| hex curse     | (coven) 6 hex to inflict poison, weaken, and shiver for 3 turns       |
 | blood ritual  | (coven) 1-12 hex to deal from small to **MASSIVE** damage             |
 
 ### Weapons
@@ -136,7 +142,6 @@ For **warforge** may switch into OMEGA protocol to increase strength by 30%, DEL
 | wooden shield     | 20 hp, 4 defense                                    | 63   |
 | basic plate       | 80 hp                                               | 80   |
 | spike helmet      | 10 hp, 2 defense, 5 strength                        | 65   |
-| spiky armor       | 30 hp, 2 defense, reflect (small)                   | 70   |
 | cloak             | 10 hp, 3 agility                                    | 51   |
 | iron shield       | 20 hp, 12 defense                                   | 440  |
 | standard armor    | 150 hp, 6 defense, -1 agility                       | 450  |
@@ -145,52 +150,55 @@ For **warforge** may switch into OMEGA protocol to increase strength by 30%, DEL
 | heavy plate       | 240 hp                                              | 437  |
 | wolfshead         | 75 hp, 5 defense, 10 strength                       | 480  |
 | arcane vest       | 30 hp, 4 energy cap                                 | 420  |
-| deepsea mantle    | 24 hp, damage cannot exceeds 18% hp cap             | 1400 |
+| deepsea mantle    | 24 hp, initial damage cannot exceed 20% hp cap      | 1400 |
 | obsidian shield   | 20 hp, 33 defense                                   | 1310 |
 | obsidian armor    | 325 hp, 15 defense, -2 agility                      | 1500 |
 | mythril plate     | 200 hp, 16% reduction                               | 1540 |
 | reinforced plate  | 500 hp, -2 agility                                  | 1410 |
+| chainmail         | 150 hp, 6 defense, +15% defense value               | 1450 |
 | king's helmet     | 120 hp, 10 defense, 20 strength                     | 1390 |
 | misty cloak       | 50 hp, 12 agility                                   | 1200 |
-| void mantle       | 24 hp, damage cannot exceeds 12% hp cap             | 3000 |
-| energy shield     | 20 hp, 2 energy cap, get 37% reduction every 4 turn | 3000 |
+| void mantle       | 24 hp, immune to the first damage                   | 3000 |
+| energy shield     | 20 hp, 2 energy cap, get 35% reduction every 4 turn | 3000 |
 | amethyst armor    | 75 hp, 6 defense, reflect (high)                    | 3100 |
 | conqueror's armor | 400 hp, 20 defense, 8% reduction                    | 3200 |
 
 ### Effects
 
-| Name            | Desc                                                                                                           |
-| --------------- | -------------------------------------------------------------------------------------------------------------- |
-| ace             | do 28% more damage, 28% damage reduction, extra energy recovery                                                |
-| stunned         | block player/enemy turn                                                                                        |
-| poisoned        | chip away 11% hp + 10 as damage (ignore half defense)                                                          |
-| poisoned severe | chip away 22% hp + 20 as damage (ignore half defense)                                                          |
-| burning         | chip away 05% hp cap + 10 as damage (ignore half defense), remove frozen effect                                |
-| burning severe  | chip away 10% hp cap + 20 as damage (ignore half defense), remove frozen effect                                |
-| barrier         | 40% damage reduction                                                                                           |
-| force-field     | 15% damage reduction                                                                                           |
-| heal aura       | recover 7% hp cap                                                                                              |
-| immunity        | immune to damage                                                                                               |
-| reflect small   | send 30% of the damage back to the attacker                                                                    |
-| reflect         | send 60% of the damage back to the attacker                                                                    |
-| reflect high    | send 90% of the damage back to the attacker                                                                    |
-| strengthen      | do 10% more damage                                                                                             |
-| weakened        | do 13% less damage, reduce defense by half                                                                     |
-| vitality        | do 5% more damage, 5% damage reduction, recover 10% of lost hp                                                 |
-| confused        | increased energy cost                                                                                          |
-| disoriented     | cannot use skills                                                                                              |
-| frozen          | similar to stun but it increase target's defense by 25%. also has 50% chance to shatter, dealing x2 the damage |
+| Name            | Desc                                                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| ace             | do 28% more damage, 28% damage reduction, +15% agility value, extra energy recovery                                                        |
+| stunned         | block player/enemy turn                                                                                                                    |
+| poisoned        | chip away 11% hp + 10 as damage (ignore half defense)                                                                                      |
+| poisoned severe | chip away 22% hp + 20 as damage (ignore half defense)                                                                                      |
+| burning         | chip away 05% hp cap + 10 as damage (ignore half defense), remove frozen effect                                                            |
+| burning severe  | chip away 10% hp cap + 20 as damage (ignore half defense), remove frozen effect                                                            |
+| bleeding        | chip away 6% hp but gradually increase to 12%, 24% and 50% (ignore 40-70% defense). Any type of healing can minimize or remove this effect |
+| barrier         | 40% damage reduction                                                                                                                       |
+| force-field     | 15% damage reduction, +10% agility value                                                                                                   |
+| heal aura       | recover 7% hp cap                                                                                                                          |
+| immunity        | immune to damage                                                                                                                           |
+| reflect low     | send 30% of the damage back to the attacker                                                                                                |
+| reflect         | send 60% of the damage back to the attacker                                                                                                |
+| reflect high    | send 90% of the damage back to the attacker                                                                                                |
+| strengthen      | do 10% more damage, increase defense value by 10%                                                                                          |
+| weakened        | do 15% less damage, decrease defense value by half                                                                                         |
+| vitality        | do 5% more damage, 5% damage reduction, recover 10% of lost hp                                                                             |
+| confused        | increased energy cost                                                                                                                      |
+| disoriented     | cannot use skills                                                                                                                          |
+| frozen          | like stunned with 50% chance to shatter, dealing x2 damage. Otherwise increase target's defense value by 4 + 20%                           |
+| focus           | increase agility value by 5 + 30%                                                                                                          |
+| shiver          | decrease agility value by 5 + 30%                                                                                                          |
 
 ### Other
 
 - **Battle**: go to battle, the enemy difficulty is scaled
+- **Quick Battle**: fast, instant battle but you cannot use skill or flee
 - **Deep forest**: explore the deep forest, may get something
 - **Dungeon**: explore the dungeon, TO BE ADDED
 - **Guest house**: recover your healthpoint
-- **Training grounds**: 40% chance to buff random attributes
+- **Training grounds**: 49% chance to buff random attributes
 - **Switch perk**: allow you to change perk.
-
-tips: for quick gameplay pick poisoner then spam stun and poison skill.
 
 ```bash
 git clone https://github.com/Noblefel/term-rpg

@@ -59,6 +59,7 @@ type savedata struct {
 	Perk   int     `json:"perk"`
 	Gold   int     `json:"gold"`
 	Weapon int     `json:"weapon"`
+	Armor  int     `json:"armor"`
 	Skills [5]int  `json:"skills"`
 	Hp     float64 `json:"hp"`
 	Hpc    float64 `json:"hpc"`
@@ -75,6 +76,7 @@ func save() error {
 		Perk:   player.perk,
 		Gold:   player.gold,
 		Weapon: player.weapon,
+		Armor:  player.armor,
 		Skills: player.skills,
 		Hp:     player.hp,
 		Hpc:    player.hpcap,
@@ -115,6 +117,7 @@ func load() error {
 	load.perk = data.Perk
 	load.gold = data.Gold
 	load.weapon = data.Weapon
+	load.armor = data.Armor
 	load.skills = data.Skills
 	load.hp = data.Hp
 	load.hpcap = data.Hpc

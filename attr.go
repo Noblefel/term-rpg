@@ -37,29 +37,31 @@ func (attr *attributes) attack(target entity) {
 }
 
 func (attr *attributes) attackWith(target entity, dmg float64) {
-	dodge := target.attr().agility*0.5 - attr.agility*0.15
+	dodge := target.attr().agi()*0.5 - attr.agi()*0.15
+
 	if dodge > rand.Float64()*100 {
 		fmt.Println(" \033[38;5;226mmiss\033[0m")
 		return
 	}
 
-	if attr.effects["strengthen"] > 0 {
+	if attr.has("strengthen") {
 		dmg += dmg * 0.1
 	}
 
-	if attr.effects["vitality"] > 0 {
+	if attr.has("vitality") {
 		dmg += dmg * 0.05
 	}
 
-	if attr.effects["weakened"] > 0 {
-		dmg -= dmg * 0.13
+	if attr.has("weakened") {
+		dmg -= dmg * 0.15
 	}
 
-	if attr.effects["ace"] > 0 {
+	if attr.has("ace") {
 		dmg += dmg * 0.28
 	}
 
-	crit := attr.agility - target.attr().agility*0.25
+	crit := attr.agi() - target.attr().agi()*0.25
+
 	if crit > rand.Float64()*100 {
 		fmt.Print(" \033[38;5;226mcrit\033[0m")
 		dmg *= 1.75
@@ -68,13 +70,13 @@ func (attr *attributes) attackWith(target entity, dmg float64) {
 	target.damage(dmg)
 
 	// chain ifs to prevent multiple reflect damage
-	if target.attr().effects["reflect high"] > 0 {
+	if target.attr().has("reflect high") {
 		fmt.Print("  reflected")
 		attr.damage(dmg * 0.9)
-	} else if target.attr().effects["reflect"] > 0 {
+	} else if target.attr().has("reflect") {
 		fmt.Print("  reflected")
 		attr.damage(dmg * 0.6)
-	} else if target.attr().effects["reflect small"] > 0 {
+	} else if target.attr().has("reflect low") {
 		fmt.Print("  reflected")
 		attr.damage(dmg * 0.3)
 	}
@@ -83,43 +85,86 @@ func (attr *attributes) attackWith(target entity, dmg float64) {
 func (attr *attributes) applyEffects() {
 	// some effects ignore half defense because they are too high
 
-	if attr.effects["poisoned"] > 0 {
+	if attr.has("poisoned") && !attr.has("poison immunity") {
 		fmt.Printf("  %s suffer from poison", attr.name)
-		attr.damage(attr.defense*0.5 + attr.hp*0.11 + 10)
+		attr.damage(attr.defense/2 + attr.hp*0.11 + 10)
 	}
 
-	if attr.effects["poisoned severe"] > 0 {
+	if attr.has("poisoned severe") && !attr.has("poison immunity") {
 		fmt.Printf("  %s suffer from severe poison", attr.name)
-		attr.damage(attr.defense*0.5 + attr.hp*0.22 + 20)
+		attr.damage(attr.defense/2 + attr.hp*0.22 + 20)
 	}
 
-	if attr.effects["burning"] > 0 {
+	if attr.has("burning") && !attr.has("burning immunity") {
 		fmt.Printf("  %s suffer from burning", attr.name)
-		attr.damage(attr.defense*0.5 + attr.hpcap*0.05 + 10)
+		attr.damage(attr.defense/2 + attr.hpcap*0.05 + 10)
 		delete(attr.effects, "frozen")
 	}
 
-	if attr.effects["burning severe"] > 0 {
+	if attr.has("burning severe") && !attr.has("burning immunity") {
 		fmt.Printf("  %s suffer from severe burning", attr.name)
-		attr.damage(attr.defense*0.5 + attr.hpcap*0.1 + 20)
+		attr.damage(attr.defense/2 + attr.hpcap*0.1 + 20)
 		delete(attr.effects, "frozen")
 	}
 
-	if attr.effects["vitality"] > 0 {
+	if attr.has("vitality") {
 		heal := (attr.hpcap - attr.hp) * 0.1
 		attr.hp = min(attr.hp+heal, attr.hpcap)
 		fmt.Printf("  %s recover \033[38;5;83m%.1f\033[0m hp from vitality\n", attr.name, heal)
+		attr.effects["bleeding"] -= 10
 	}
 
-	if attr.effects["heal aura"] > 0 {
+	if attr.has("heal aura") {
 		heal := attr.hpcap * 0.07
 		attr.hp = min(attr.hp+heal, attr.hpcap)
 		fmt.Printf("  %s recover \033[38;5;83m%.1f\033[0m hp from healing aura\n", attr.name, heal)
+		attr.effects["bleeding"] -= 20
+	}
+
+	if attr.has("bleeding") {
+		// in case of this effect, the "turn" count is changed to severity.
+		// and this effect cant go away without healing.
+		severity := attr.effects["bleeding"]
+		attr.effects["bleeding"] += 8
+
+		if severity > 60 {
+			fmt.Printf("  %s suffer from severe bleeding", attr.name)
+			attr.damage(attr.defense*0.7 + attr.hp*0.5)
+		} else if severity > 30 {
+			fmt.Printf("  %s suffer from heavy bleeding", attr.name)
+			attr.damage(attr.defense*0.6 + attr.hp*0.24)
+		} else if severity > 10 {
+			fmt.Printf("  %s suffer from mild bleeding", attr.name)
+			attr.damage(attr.defense*0.5 + attr.hp*0.12)
+		} else {
+			fmt.Printf("  %s suffer from minor bleeding", attr.name)
+			attr.damage(attr.defense*0.4 + attr.hp*0.06)
+		}
 	}
 }
 
-func (attr attributes) attr() attributes {
-	return attr
+func (attr attributes) attr() attributes { return attr }
+
+func (attr attributes) agi() float64 {
+	agi := attr.agility
+
+	if attr.has("ace") {
+		agi += agi * 0.15
+	}
+
+	if attr.has("focus") {
+		agi += agi*0.3 + 5
+	}
+
+	if attr.has("shiver") {
+		agi -= agi*0.3 + 5
+	}
+
+	if attr.has("force-field") {
+		agi += agi * 0.1
+	}
+
+	return agi
 }
 
 func (attr *attributes) setHP(hp float64) {
@@ -129,37 +174,42 @@ func (attr *attributes) setHP(hp float64) {
 func (attr *attributes) damage(dmg float64) {
 	defense := attr.defense
 
-	if attr.effects["immunity"] > 0 {
+	if attr.has("immunity") {
 		fmt.Println(" \033[38;5;226mimmune\033[0m")
 		return
 	}
 
-	if attr.effects["vitality"] > 0 {
+	if attr.has("strengthen") {
+		defense += defense * 0.1
+	}
+
+	if attr.has("vitality") {
 		dmg -= dmg * 0.05
 	}
 
-	if attr.effects["barrier"] > 0 {
+	if attr.has("barrier") {
 		dmg -= dmg * 0.4
 	}
 
-	if attr.effects["force-field"] > 0 {
+	if attr.has("force-field") {
 		dmg -= dmg * 0.15
 	}
 
-	if attr.effects["ace"] > 0 {
+	if attr.has("ace") {
 		dmg -= dmg * 0.28
 	}
 
-	if attr.effects["frozen"] == 1 { // prevent instant shatter
+	// prevent instant shatter
+	if attr.effects["frozen"] == 1 && !attr.has("frozen immunity") {
 		if roll() < 50 {
 			fmt.Print(" \033[38;5;226mshatter\033[0m")
 			dmg *= 2
 		} else {
-			defense += defense * 0.25
+			defense += 4 + defense*0.2
 		}
 	}
 
-	if attr.effects["weakened"] > 0 {
+	if attr.has("weakened") {
 		defense /= 2
 	}
 
@@ -168,9 +218,17 @@ func (attr *attributes) damage(dmg float64) {
 	fmt.Printf(" \033[38;5;198m%.1f\033[0m\n", dmg)
 }
 
+func (attr attributes) has(effect string) bool {
+	return attr.effects[effect] > 0
+}
+
 func (attr attributes) decrementEffect() {
 	for k := range attr.effects {
-		attr.effects[k]--
+		if attr.effects[k] <= 0 {
+			delete(attr.effects, k)
+		} else {
+			attr.effects[k]--
+		}
 	}
 }
 

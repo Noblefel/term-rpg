@@ -56,8 +56,8 @@ func TestAttributes_AttackWith(t *testing.T) {
 		attacker.attackWith(target, 10)
 		clear(attacker.effects)
 
-		if !equal(100-target.hp, 8.7) {
-			t.Errorf("damage should be 8.7 (13%% reduction), got %.1f", 100-target.hp)
+		if !equal(100-target.hp, 8.5) {
+			t.Errorf("damage should be 8.5 (15%% reduction), got %.1f", 100-target.hp)
 		}
 	})
 
@@ -84,8 +84,8 @@ func TestAttributes_AttackWith(t *testing.T) {
 		}
 	})
 
-	t.Run("reflect small", func(t *testing.T) {
-		target.effects["reflect small"] = 1
+	t.Run("reflect low", func(t *testing.T) {
+		target.effects["reflect low"] = 1
 		attacker.hp = 10
 		attacker.hpcap = 10
 		attacker.strength = 10
@@ -219,6 +219,91 @@ func TestAttributes_ApplyEffects(t *testing.T) {
 			t.Errorf("should heal by 7 (7%% of hpcap), got %.1f", target.hp)
 		}
 	})
+
+	t.Run("bleeding", func(t *testing.T) {
+		target.hp = 100
+		target.defense = 1
+		target.effects["bleeding"] = 61
+		target.applyEffects()
+
+		dmg := 100*0.5 + target.defense*0.7 - target.defense
+		if !equal(dmg, 100-target.hp) {
+			t.Errorf("SEVERE BLEEDING damage should be %.1f (50%% hp + 70%% def), got %.1f", dmg, 100-target.hp)
+		}
+
+		target.hp = 100
+		target.effects["bleeding"] = 31
+		target.applyEffects()
+
+		dmg = 100*0.24 + target.defense*0.6 - target.defense
+		if !equal(dmg, 100-target.hp) {
+			t.Errorf("HEAVY BLEEDING damage should be %.1f (24%% hp + 60%% def), got %.1f", dmg, 100-target.hp)
+		}
+
+		target.hp = 100
+		target.effects["bleeding"] = 11
+		target.applyEffects()
+
+		dmg = 100*0.12 + target.defense*0.5 - target.defense
+		if !equal(dmg, 100-target.hp) {
+			t.Errorf("MILD BLEEDING damage should be %.1f (12%% hp + 50%% def), got %.1f", dmg, 100-target.hp)
+		}
+
+		target.hp = 100
+		target.effects["bleeding"] = 1
+		target.applyEffects()
+
+		dmg = 100*0.06 + target.defense*0.4 - target.defense
+		if !equal(dmg, 100-target.hp) {
+			t.Errorf("MINOR BLEEDING damage should be %.1f (6%% hp + 40%% def), got %.1f", dmg, 100-target.hp)
+		}
+	})
+}
+
+func TestAttributes_Agi(t *testing.T) {
+	var attr attributes
+	attr.agility = 10
+	attr.effects = make(map[string]int)
+
+	t.Run("ace", func(t *testing.T) {
+		attr.effects["ace"] = 1
+		got := attr.agi()
+		clear(attr.effects)
+
+		if got != 11.5 {
+			t.Errorf("agility should be 11.5 (15%% increase), got %.1f", got)
+		}
+	})
+
+	t.Run("focus", func(t *testing.T) {
+		attr.effects["focus"] = 1
+		got := attr.agi()
+		clear(attr.effects)
+
+		if got != 18 {
+			t.Errorf("agility should be 18 (30%% increase + 5), got %.1f", got)
+		}
+	})
+
+	t.Run("shiver", func(t *testing.T) {
+		attr.effects["shiver"] = 1
+		got := attr.agi()
+		clear(attr.effects)
+
+		if got != 2 {
+			t.Errorf("agility should be 2 (30%% decrease - 5), got %.1f", got)
+		}
+	})
+
+	t.Run("force-field", func(t *testing.T) {
+		attr.effects["force-field"] = 1
+		got := attr.agi()
+		clear(attr.effects)
+
+		if got != 11 {
+			t.Errorf("agility should be 11 (10%% increase), got %.1f", got)
+		}
+	})
 }
 
 func TestAttributes_Damage(t *testing.T) {
@@ -246,6 +331,19 @@ func TestAttributes_Damage(t *testing.T) {
 
 		if 100-target.hp != 0 {
 			t.Errorf("damage should be 0 (immune), got %.1f", 100-target.hp)
+		}
+	})
+
+	t.Run("strengthen effect", func(t *testing.T) {
+		target.hp = 100
+		target.defense = 1
+		target.effects["strengthen"] = 1
+		target.damage(10)
+		clear(target.effects)
+		target.defense = 0
+
+		if !equal(100-target.hp, 8.9) {
+			t.Errorf("damage should be 8.9 (+10%% defense value), got %.1f", 100-target.hp)
 		}
 	})
 
@@ -299,9 +397,9 @@ func TestAttributes_Damage(t *testing.T) {
 		target.damage(20)
 		clear(target.effects)
 
-		dmg := 20 - target.defense*1.25
+		dmg := 20 - target.defense*1.2 - 4
 		if 100-target.hp != dmg {
-			t.Errorf("damage should be %.1f (25%% defense increase), got %.1f", dmg, 100-target.hp)
+			t.Errorf("damage should be %.1f (+20%% defense value + 4), got %.1f", dmg, 100-target.hp)
 		}
 	})
 

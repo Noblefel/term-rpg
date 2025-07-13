@@ -36,9 +36,20 @@ func TestPlayer_AttackWith(t *testing.T) {
 		t.Errorf("enemy hp should be reduced to %.1f", p.hpcap-p.strength)
 	}
 
+	t.Run("with fencer perk", func(t *testing.T) {
+		p := newTestPlayer()
+		p.perk = 12
+		p.attack(p)
+
+		dmg := p.strength * 0.55 * 2
+		if 100-p.hp != dmg {
+			t.Errorf("damage should be %.1f (55%% twice), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
 	t.Run("with havoc perk", func(t *testing.T) {
 		p := newTestPlayer()
-		p.perk = 1
+		p.perk = 2
 		p.attackWith(p, p.strength)
 
 		dmg := p.strength * 1.2
@@ -51,7 +62,7 @@ func TestPlayer_AttackWith(t *testing.T) {
 		p1 := newTestPlayer()
 		p2 := newTestPlayer()
 		p1.hp = p1.hpcap * 0.3
-		p1.perk = 2
+		p1.perk = 3
 		p1.attackWith(p2, p1.strength)
 
 		dmg := p1.strength * 1.15
@@ -74,7 +85,7 @@ func TestPlayer_AttackWith(t *testing.T) {
 	t.Run("insanity perk", func(t *testing.T) {
 		rolltest = 1
 		p := newTestPlayer()
-		p.perk = 7
+		p.perk = 8
 		p.attackWith(p, p.strength)
 		mindmg := p.strength - p.strength*0.3
 		maxdmg := p.strength + p.strength*0.3
@@ -109,7 +120,7 @@ func TestPlayer_AttackWith(t *testing.T) {
 	t.Run("frigid perk", func(t *testing.T) {
 		rolltest = 1
 		p := newTestPlayer()
-		p.perk = 9
+		p.perk = 10
 		p.attackWith(p, 1)
 
 		// if p.effects["frozen"] != 2 {
@@ -130,25 +141,17 @@ func TestPlayer_Damage(t *testing.T) {
 	t.Run("with resilient perk", func(t *testing.T) {
 		p := newTestPlayer()
 		want := p.hp - 9
-		p.perk = 0
+		p.perk = 1
 		p.damage(10)
 
 		if p.hp != want {
 			t.Errorf("hp should be %.1f (10%% dmg reduction), got: %.1f", want, p.hp)
 		}
-
-		p.hp = 100
-		want = p.hp - 12
-		p.damage(999)
-
-		if p.hp != want {
-			t.Errorf("hp should be %.1f (cannot exceed 12%% hp cap), got: %.1f", want, p.hp)
-		}
 	})
 
 	t.Run("with berserk perk and 20% hp", func(t *testing.T) {
 		p := newTestPlayer()
-		p.perk = 2
+		p.perk = 3
 		p.hp = p.hpcap * 0.2
 		p.damage(10)
 
@@ -206,7 +209,7 @@ func TestPlayer_Skill(t *testing.T) {
 	t.Run("with ingenious perk", func(t *testing.T) {
 		i := find("charge")
 		p := newTestPlayer()
-		p.perk = 3
+		p.perk = 4
 		p.skill(i, p)
 		basecd := skills[0].cd
 		cd := p.effects["cd"+skills[0].name]
@@ -219,7 +222,7 @@ func TestPlayer_Skill(t *testing.T) {
 	t.Run("with berserk perk and < 25% hp", func(t *testing.T) {
 		i := find("charge")
 		p := newTestPlayer()
-		p.perk = 2
+		p.perk = 3
 		p.hp = p.hpcap * 0.25
 		p.skill(i, p)
 		basecd := skills[0].cd
@@ -234,7 +237,7 @@ func TestPlayer_Skill(t *testing.T) {
 		i := find("charge")
 		skills[i].cd = 99999 // to make sure
 		p := newTestPlayer()
-		p.perk = 7
+		p.perk = 8
 		p.skill(i, p)
 		cd := p.effects["cd"+skills[0].name]
 
@@ -418,6 +421,21 @@ func TestPlayer_Skill(t *testing.T) {
 		}
 	})
 
+	t.Run("focus attack", func(t *testing.T) {
+		i := find("focus attack")
+		p := newTestPlayer()
+		p.skill(i, p)
+
+		dmg := p.strength
+		if 100-p.hp != dmg {
+			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+
+		if p.effects["focus"] != 4 {
+			t.Error("should get focus for 4 turns, got", p.effects["focus"])
+		}
+	})
+
 	t.Run("devour", func(t *testing.T) {
 		i := find("devour")
 		p1 := newTestPlayer()
@@ -554,8 +572,10 @@ func TestPlayer_Rest(t *testing.T) {
 	p.energycap = 100
 	p.rest()
 
-	if p.hp < 20 {
-		t.Errorf("should atleast heal 20 hp, got %.1f", p.hp)
+	min := p.hpcap*0.1 + 20
+
+	if p.hp < min {
+		t.Errorf("should atleast heal %.1f hp (10%% hpcap + 20), got %.1f", min, p.hp)
 	}
 
 	if p.energy != 5 {
@@ -644,7 +664,7 @@ func TestPlayer_Flee(t *testing.T) {
 	})
 
 	t.Run("too slow and get caught", func(t *testing.T) {
-		rolltest = 20
+		rolltest = 25
 		e := newTestPlayer()
 		e.agility = 99999
 		p := newTestPlayer()
@@ -655,8 +675,21 @@ func TestPlayer_Flee(t *testing.T) {
 		}
 	})
 
+	t.Run("too slow and get caught but enemy is frozen", func(t *testing.T) {
+		rolltest = 25
+		e := newTestPlayer()
+		e.effects["frozen"] = 1
+		p := newTestPlayer()
+		p.hp = 100
+		p.flee(e)
+
+		if p.hp != 100 {
+			t.Error("should not be attacked by the enemy")
+		}
+	})
+
 	t.Run("too slow and get caught but enemy is stunned", func(t *testing.T) {
-		rolltest = 20
+		rolltest = 25
 		e := newTestPlayer()
 		e.effects["stunned"] = 1
 		p := newTestPlayer()
@@ -935,23 +968,13 @@ func TestPlayer_UseArmor(t *testing.T) {
 		panic("no armor found")
 	}
 
-	t.Run("spiky armor", func(t *testing.T) {
-		p := newTestPlayer()
-		p.armor = find("spiky armor")
-		p.useArmor(1)
-
-		if p.effects["reflect small"] == 0 {
-			t.Error("should get reflect small effect")
-		}
-	})
-
 	t.Run("crystal armor", func(t *testing.T) {
 		p := newTestPlayer()
 		p.armor = find("crystal armor")
 		p.useArmor(1)
 
-		if p.effects["reflect small"] == 0 {
-			t.Error("should get reflect small effect")
+		if p.effects["reflect low"] == 0 {
+			t.Error("should get reflect low effect")
 		}
 	})
 
@@ -970,10 +993,10 @@ func TestPlayer_UseArmor(t *testing.T) {
 		p := newTestPlayer()
 		p.armor = find("deepsea mantle")
 
-		dmg := p.hpcap * 0.18
+		dmg := p.hpcap * 0.2
 		got := p.useArmor(99999) // to make sure
 		if got != dmg {
-			t.Errorf("damage should be %.1f (cannot exceed 18%% hp cap), got %.1f", dmg, got)
+			t.Errorf("damage should be %.1f (cannot exceed 20%% hp cap), got %.1f", dmg, got)
 		}
 	})
 
@@ -988,14 +1011,25 @@ func TestPlayer_UseArmor(t *testing.T) {
 		}
 	})
 
+	t.Run("chainmail", func(t *testing.T) {
+		p := newTestPlayer()
+		p.defense = 10
+		p.armor = find("chainmail")
+
+		dmg := 10 - 10*0.15
+		got := p.useArmor(10)
+		if got != dmg {
+			t.Errorf("damage should be %.1f (+15%% defense value), got %.1f", dmg, got)
+		}
+	})
+
 	t.Run("void mantle", func(t *testing.T) {
 		p := newTestPlayer()
 		p.armor = find("void mantle")
+		p.useArmor(1)
 
-		dmg := p.hpcap * 0.12
-		got := p.useArmor(99999) // to make sure
-		if got != dmg {
-			t.Errorf("damage should be %.1f (cannot exceed 12%% hp cap), got %.1f", dmg, got)
+		if p.effects["immunity"] == 0 {
+			t.Errorf("should get immunity effect")
 		}
 	})
 
@@ -1003,10 +1037,10 @@ func TestPlayer_UseArmor(t *testing.T) {
 		p := newTestPlayer()
 		p.armor = find("energy shield")
 
-		dmg := 10 - 10*0.37
+		dmg := 10 - 10*0.35
 		got := p.useArmor(10)
 		if got != dmg {
-			t.Errorf("damage should be %.1f (37%% reduction), got %.1f", dmg, got)
+			t.Errorf("damage should be %.1f (35%% reduction), got %.1f", dmg, got)
 		}
 
 		if p.effects["energy shield"] != 4 {
@@ -1038,11 +1072,11 @@ func TestPlayer_UseArmor(t *testing.T) {
 
 func TestPlayer_SetPerk(t *testing.T) {
 	t.Run("resilient", func(t *testing.T) {
-		p := &Player{perk: -1}
+		p := &Player{}
 		p.hp = 100
 		p.hpcap = 100
 		p.defense = 1
-		p.setPerk(0)
+		p.setPerk(1)
 
 		if p.hpcap != 120 {
 			t.Errorf("hpcap should be 120, got %.1f", p.hpcap)
@@ -1052,7 +1086,7 @@ func TestPlayer_SetPerk(t *testing.T) {
 			t.Errorf("defense should be 6, got %.1f", p.defense)
 		}
 
-		p.setPerk(-1)
+		p.setPerk(0)
 
 		if p.hpcap != 100 || p.hp != 100 {
 			t.Errorf("hpcap & hp should be back to 100, got %.1f %.1f", p.hpcap, p.hp)
@@ -1064,11 +1098,11 @@ func TestPlayer_SetPerk(t *testing.T) {
 	})
 
 	t.Run("havoc", func(t *testing.T) {
-		p := &Player{perk: -1}
+		p := &Player{}
 		p.hp = 100
 		p.hpcap = 100
 		p.energycap = 20
-		p.setPerk(1)
+		p.setPerk(2)
 
 		if p.hpcap != 50 {
 			t.Errorf("hpcap should be 50, got %.1f", p.hpcap)
@@ -1078,10 +1112,10 @@ func TestPlayer_SetPerk(t *testing.T) {
 			t.Errorf("energy cap should be 16, got %d", p.energycap)
 		}
 
-		p.setPerk(-1)
+		p.setPerk(0)
 
-		if p.hpcap != 100 || p.hp != 100 {
-			t.Errorf("hpcap & hp should be back to 100, got %.1f %.1f", p.hpcap, p.hp)
+		if p.hpcap != 100 {
+			t.Errorf("hpcap should be back to 100, got %.1f", p.hpcap)
 		}
 
 		if p.energycap != 20 {
@@ -1090,15 +1124,15 @@ func TestPlayer_SetPerk(t *testing.T) {
 	})
 
 	t.Run("ingenious", func(t *testing.T) {
-		p := &Player{perk: -1}
+		p := &Player{}
 		p.energycap = 20
-		p.setPerk(3)
+		p.setPerk(4)
 
 		if p.energycap != 22 {
 			t.Errorf("energy cap should be 22, got %d", p.energycap)
 		}
 
-		p.setPerk(-1)
+		p.setPerk(0)
 
 		if p.energycap != 20 {
 			t.Errorf("energy cap should be back to 20, got %d", p.energycap)
@@ -1108,13 +1142,13 @@ func TestPlayer_SetPerk(t *testing.T) {
 	t.Run("survivor", func(t *testing.T) {
 		var p Player
 		p.agility = 10
-		p.setPerk(6)
+		p.setPerk(7)
 
 		if p.agility != 15 {
 			t.Errorf("agility should be 15, got %.1f", p.agility)
 		}
 
-		p.setPerk(-1)
+		p.setPerk(0)
 
 		if p.agility != 10 {
 			t.Errorf("agility should be back to 10, got %.1f", p.agility)
@@ -1124,16 +1158,32 @@ func TestPlayer_SetPerk(t *testing.T) {
 	t.Run("shock", func(t *testing.T) {
 		var p Player
 		p.strength = 10
-		p.setPerk(8)
+		p.setPerk(9)
 
 		if p.strength != 15 {
 			t.Errorf("strength should be 15, got %.1f", p.strength)
 		}
 
-		p.setPerk(-1)
+		p.setPerk(0)
 
 		if p.strength != 10 {
 			t.Errorf("strength should be back to 10, got %.1f", p.strength)
+		}
+	})
+
+	t.Run("frigid", func(t *testing.T) {
+		var p Player
+		p.agility = 10
+		p.setPerk(10)
+
+		if p.agility != 5 {
+			t.Errorf("agility should be 5, got %.1f", p.agility)
+		}
+
+		p.setPerk(0)
+
+		if p.agility != 10 {
+			t.Errorf("agility should be back to 10, got %.1f", p.agility)
 		}
 	})
 }
@@ -1146,7 +1196,6 @@ func newTestPlayer() *Player {
 	p.strength = 10
 	p.energy = 20
 	p.energycap = 20
-	p.perk = -1
 	p.effects = make(map[string]int)
 	return &p
 }

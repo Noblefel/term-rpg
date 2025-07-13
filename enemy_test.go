@@ -702,6 +702,12 @@ func TestGoblin(t *testing.T) {
 }
 
 func TestInfernal(t *testing.T) {
+	t.Run("spawner", func(t *testing.T) {
+		if newInfernal().attr().effects["burning immunity"] == 0 {
+			t.Error("should start with burning immunity effect")
+		}
+	})
+
 	var infernal infernal
 	infernal.strength = 10
 
@@ -752,6 +758,231 @@ func TestInfernal(t *testing.T) {
 		dmg := infernal.strength
 		if !equal(dmg, 100-p.hp) {
 			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+}
+
+func TestVineMonster(t *testing.T) {
+	t.Run("spawner", func(t *testing.T) {
+		if newVineMonster().attr().effects["reflect low"] == 0 {
+			t.Error("should start with reflect low effect")
+		}
+	})
+
+	var vine vineMonster
+	vine.strength = 10
+
+	t.Run("ensnare", func(t *testing.T) {
+		rolltest = 1
+		p := newTestPlayer()
+		vine.attack(p)
+
+		if p.effects["stunned"] != 2 {
+			t.Errorf("should inflict stun for 2 turns, got %d", p.effects["stunned"])
+		}
+
+		dmg := vine.strength * 0.6
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (60%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("burst of thorns", func(t *testing.T) {
+		rolltest = 30
+		p := newTestPlayer()
+		vine.attack(p)
+
+		dmg := vine.strength * 0.6
+		if 100-p.hp < dmg {
+			t.Errorf("damage should be atleast %.1f (60%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("basic", func(t *testing.T) {
+		p := newTestPlayer()
+		rolltest = 45
+		vine.attack(p)
+
+		dmg := vine.strength
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+}
+
+func TestArcticWarrior(t *testing.T) {
+	t.Run("spawner", func(t *testing.T) {
+		if newArcticWarrior().attr().effects["frozen immunity"] == 0 {
+			t.Error("should start with frozen immunity effect")
+		}
+	})
+
+	var arctic arcticWarrior
+	arctic.strength = 10
+
+	t.Run("frozen attack", func(t *testing.T) {
+		rolltest = 1
+		p := newTestPlayer()
+		arctic.attack(p)
+
+		if p.effects["frozen"] != 2 {
+			t.Errorf("should inflict frozen for 2 turns, got %d", p.effects["frozen"])
+		}
+	})
+
+	t.Run("snowstorm", func(t *testing.T) {
+		rolltest = 20
+		p := newTestPlayer()
+		arctic.attack(p)
+
+		dmg := arctic.strength * 0.2
+		if 100-p.hp < dmg {
+			t.Errorf("damage should be atleast %.1f (20%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("avalanche", func(t *testing.T) {
+		rolltest = 35
+		p := newTestPlayer()
+		arctic.attack(p)
+
+		dmg := arctic.strength
+		if 100-p.hp < dmg {
+			t.Errorf("damage should be atleast %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("basic", func(t *testing.T) {
+		p := newTestPlayer()
+		rolltest = 43
+		arctic.attack(p)
+
+		dmg := arctic.strength
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+}
+
+func TestJungleWarrior(t *testing.T) {
+	t.Run("spawner", func(t *testing.T) {
+		if newJungleWarrior().attr().effects["poison immunity"] == 0 {
+			t.Error("should start with poison immunity effect")
+		}
+	})
+
+	var jungle jungleWarrior
+	jungle.strength = 10
+	jungle.effects = make(map[string]int)
+
+	t.Run("venom spear", func(t *testing.T) {
+		rolltest = 1
+		p := newTestPlayer()
+		jungle.attack(p)
+
+		if p.effects["shiver"] != 3 {
+			t.Errorf("should inflict shiver for 3 turns, got %d", p.effects["shiver"])
+		}
+
+		dmg := jungle.strength * 1
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("ancestral spirits", func(t *testing.T) {
+		rolltest = 14
+		p := newTestPlayer()
+		jungle.attack(p)
+
+		if jungle.effects["vitality"] != 4 {
+			t.Errorf("should get vitality for 4 turns, got %d", jungle.effects["vitality"])
+		}
+		clear(jungle.effects)
+
+		dmg := jungle.strength * 0.8
+		dmg += dmg * 0.05 // vitality
+		if !equal(dmg, 100-p.hp) {
+			t.Errorf("damage should be %.1f (80%% strength + 5%%), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("ancestral roar", func(t *testing.T) {
+		rolltest = 28
+		p := newTestPlayer()
+		jungle.attack(p)
+
+		if jungle.effects["vitality"] != 2 {
+			t.Errorf("should get vitality for 2 turns, got %d", jungle.effects["vitality"])
+		}
+		clear(jungle.effects)
+
+		if p.effects["shiver"] != 2 {
+			t.Errorf("should inflict shiver for 2 turns, got %d", p.effects["shiver"])
+		}
+
+		dmg := jungle.strength * 1.3
+		dmg += dmg * 0.05 // vitality
+		if !equal(dmg, 100-p.hp) {
+			t.Errorf("damage should be %.1f (130%% strength + 5%%), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("leap", func(t *testing.T) {
+		rolltest = 35
+		p := newTestPlayer()
+		jungle.attack(p)
+
+		dmg := jungle.strength * 1.2
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (120%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("basic", func(t *testing.T) {
+		p := newTestPlayer()
+		rolltest = 45
+		jungle.attack(p)
+
+		dmg := jungle.strength
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+}
+
+func TestLeechMonster(t *testing.T) {
+	var leech leechMonster
+	leech.strength = 10
+
+	t.Run("bleeding", func(t *testing.T) {
+		rolltest = 1
+		p := newTestPlayer()
+		p.defense = 1
+		dmg := leech.strength + p.hp*0.1 - p.defense*0.75
+		dmg -= p.defense
+		leech.attack(p)
+
+		if p.effects["bleeding"] != 10 {
+			t.Errorf("should inflict bleeding with 10 severity, got %d", p.effects["bleeding"])
+		}
+
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% strength, 10%% target hp, x1.75 target defense value), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("basic", func(t *testing.T) {
+		rolltest = 25
+		p := newTestPlayer()
+		p.defense = 1
+
+		dmg := leech.strength + p.hp*0.2 - p.defense*1.3
+		dmg -= p.defense
+		leech.attack(p)
+
+		if !equal(dmg, 100-p.hp) {
+			t.Errorf("damage should be %.1f (100%% strength, 20%% target hp, x2.3 target defense value), got %.1f", dmg, 100-p.hp)
 		}
 	})
 }

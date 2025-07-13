@@ -8,13 +8,20 @@ import (
 type Player struct {
 	attributes
 	gold      int
-	perk      int
 	energy    int
 	energycap int
 
-	skills [5]int //skill indexes
+	perk   int    //perk index
 	weapon int    //weapon index
 	armor  int    //armor index
+	skills [5]int //skill indexes
+}
+
+var perks = []string{
+	"No perk",
+	"Resilient", "Havoc", "Berserk", "Ingenious",
+	"Poisoner", "Deadman", "Survivor", "Insanity",
+	"Shock", "Frigid", "Ranger", "Fencer",
 }
 
 var skills = []struct {
@@ -31,9 +38,10 @@ var skills = []struct {
 	{"icy blast", "attack 60% strength and 30% chance to inflict freeze", 5, 3},
 	{"swift strike", "attack 85% strength (doesnt consume turn)", 4, 4},
 	{"knives throw", "attack 40 fixed damage (doesnt consume turn, no cd)", 4, 0},
-	{"fireball", "deal moderate amount of damage and inflict burning", 6, 5},
-	{"meteor strike", "deal huge amount of damage", 9, 5},
+	{"fireball", "deal moderate amount of damage and inflict burning", 7, 5},
+	{"meteor strike", "deal huge amount of damage", 11, 5},
 	{"strengthen", "attack 100% strength to increase damage by 10% for 3 turns", 4, 7},
+	{"focus attack", "attack 100% strength to get focus state for 3 turns", 4, 5},
 	{"devour", "attack 150% strength and heal by 5% hp cap", 8, 5},
 	{"vitality", "get vitality effect for 5 turns", 4, 5},
 	{"barrier", "reduce incoming damage by 40% for 2 turns", 4, 3},
@@ -97,7 +105,6 @@ var armory = []struct {
 	{"wooden shield", "20 hp, 4 defense", 63},
 	{"basic plate", "80 hp", 80},
 	{"spike helmet", "10 hp, 2 defense, 5 strength", 65},
-	{"spiky armor", "30 hp, 2 defense, reflect (small)", 70},
 	{"cloak", "10 hp, 3 agility", 51},
 	//rare
 	{"iron shield", "20 hp, 12 defense", 440},
@@ -108,16 +115,17 @@ var armory = []struct {
 	{"wolfshead", "75 hp, 5 defense, 10 strength", 480},
 	{"arcane vest", "30 hp, 4 energy cap", 420},
 	//more rare
-	{"deepsea mantle", "24 hp, damage cannot exceeds 18% hp cap", 1400},
+	{"deepsea mantle", "24 hp, initial damage cannot exceed 20% hp cap", 1400},
 	{"obsidian shield", "20 hp, 33 defense", 1310},
 	{"obsitian armor", "325 hp, 15 defense, -2 agility", 1500},
 	{"mythril plate", "200 hp, 16% reduction", 1540},
 	{"reinforced plate", "500 hp, -2 agility", 1410},
+	{"chainmail", "150 hp, 6 defense, +15% defense value", 1450},
 	{"king's helmet", "120 hp, 10 defense, 20 strength", 1390},
 	{"misty cloak", "50 hp, 12 agility", 1200},
 	//exceptional
-	{"void mantle", "24 hp, damage cannot exceeds 12% hp cap", 3000},
-	{"energy shield", "20 hp, 2 energy cap, get 37% reduction every 4 turn", 3000},
+	{"void mantle", "24 hp, immune to the first damage", 3000},
+	{"energy shield", "20 hp, 2 energy cap, get 35% reduction every 4 turn", 3000},
 	{"amethyst armor", "75 hp, 6 defense, reflect (high)", 3100},
 	{"conqueror's armor", "400 hp, 20 defense, 8% reduction", 3200},
 }
@@ -126,7 +134,6 @@ func NewPlayer() *Player {
 	var player Player
 	player.name = "player"
 	player.gold = 100
-	player.perk = -1
 
 	player.hp = 200
 	player.hpcap = 200
@@ -137,7 +144,7 @@ func NewPlayer() *Player {
 	player.energycap = 20
 
 	// charge, stun, poison, fireball, heal potion
-	player.skills = [5]int{0, 3, 4, 9, 14}
+	player.skills = [5]int{0, 3, 4, 8, 14}
 	player.effects = make(map[string]int)
 
 	return &player
@@ -145,6 +152,14 @@ func NewPlayer() *Player {
 
 func (p *Player) attack(enemy entity) {
 	fmt.Printf(success + "you attacked!")
+
+	if p.is("Fencer") {
+		p.attackWith(enemy, p.strength*0.55)
+		fmt.Printf(success + "you attacked!")
+		p.attackWith(enemy, p.strength*0.55)
+		return
+	}
+
 	p.attackWith(enemy, p.strength)
 }
 
@@ -157,18 +172,18 @@ func (p *Player) attackWith(enemy entity, dmg float64) {
 		dmg -= dmg * 0.2
 	}
 
-	if p.perk == 1 {
+	if p.is("Havoc") {
 		dmg += dmg * 0.2
 	}
 
-	if p.perk == 2 {
+	if p.is("Berserk") {
 		percent := p.hp / (p.hpcap * 0.4) //if 1% hp   = 60% extra dmg
 		percent = min(percent, 1)         //if 40%+ hp = none
 		mul := 0.6 - percent*0.6
 		dmg += dmg * mul
 	}
 
-	if p.perk == 7 {
+	if p.is("Insanity") {
 		roll := roll()
 
 		if roll < 25 {
@@ -185,7 +200,7 @@ func (p *Player) attackWith(enemy entity, dmg float64) {
 		}
 	}
 
-	if p.perk == 9 && roll() < 15 {
+	if p.is("Frigid") && roll() < 15 {
 		fmt.Print(" \033[38;5;226mfreeze\033[0m")
 		enemy.attr().effects["frozen"] = 2
 	}
@@ -197,12 +212,11 @@ func (p *Player) attackWith(enemy entity, dmg float64) {
 func (p *Player) damage(dmg float64) {
 	dmg = p.useArmor(dmg)
 
-	if p.perk == 0 {
+	if p.is("Resilient") {
 		dmg -= dmg * 0.1
-		dmg = min(dmg, p.hpcap*0.12)
 	}
 
-	if p.perk == 2 {
+	if p.is("Berserk") {
 		percent := p.hp / (p.hpcap * 0.4) //if 0% hp   = 40% reduction
 		percent = min(percent, 1)         //if 40%+ hp = none
 		mul := 0.4 - percent*0.4
@@ -213,7 +227,7 @@ func (p *Player) damage(dmg float64) {
 }
 
 func (p *Player) skill(i int, enemy entity) bool {
-	if p.effects["disoriented"] > 0 {
+	if p.has("disoriented") {
 		fmt.Println("\033[38;5;196mcannot use skill when disoriented\033[0m")
 		return false
 	}
@@ -221,7 +235,7 @@ func (p *Player) skill(i int, enemy entity) bool {
 	skill := skills[i]
 	cost := skill.cost
 
-	if p.effects["confused"] > 0 {
+	if p.has("confused") {
 		cost++
 	}
 
@@ -230,22 +244,22 @@ func (p *Player) skill(i int, enemy entity) bool {
 		return false
 	}
 
-	if p.effects["cd"+skill.name] > 0 {
+	if p.has("cd" + skill.name) {
 		fmt.Println("\033[38;5;196mskill in cooldown\033[0m")
 		return false
 	}
 
 	cooldown := skill.cd
 
-	if p.perk == 3 {
+	if p.is("Ingenious") {
 		cooldown -= 2
 	}
 
-	if p.perk == 2 && p.hp/p.hpcap <= 0.25 {
+	if p.is("Berserk") && p.hp/p.hpcap <= 0.25 {
 		cooldown--
 	}
 
-	if p.perk == 7 {
+	if p.is("Insanity") {
 		cooldown = rand.IntN(8)
 	}
 
@@ -296,10 +310,14 @@ func (p *Player) skill(i int, enemy entity) bool {
 		p.attackWith(enemy, dmg)
 	case "strengthen":
 		p.attackWith(enemy, p.strength) // attack first so it wont get the bonus yet
-		p.effects["strengthen"] = 4     // +1 for 3 attacks
+		p.effects["strengthen"] = 4     // +1 for 3 attacks'
+	case "focus attack":
+		p.attackWith(enemy, p.strength)
+		p.effects["focus"] = 4 // +1 for 3 attacks
 	case "devour":
 		p.attackWith(enemy, p.strength*1.5)
 		heal := p.hpcap * 0.05
+		p.effects["bleeding"] -= 10
 		p.hp = min(p.hp+heal, p.hpcap)
 		fmt.Printf("  recover \033[38;5;83m%.1f\033[0m hp\n", heal)
 	case "vitality":
@@ -315,12 +333,14 @@ func (p *Player) skill(i int, enemy entity) bool {
 		heal := p.hpcap * 0.15
 		p.hp = min(p.hp+heal, p.hpcap)
 		fmt.Printf(" recover \033[38;5;83m%.1f\033[0m hp\n", heal)
+		delete(p.effects, "bleeding")
 	case "heal aura":
 		p.effects["heal aura"] = 4 // +1 because it start in next turn
 		fmt.Println(" recover \033[38;5;83m7%\033[0m hp for 3 turns")
 	case "heal potion":
 		p.hp = min(p.hp+40, p.hpcap)
 		fmt.Println(" recover \033[38;5;83m40\033[0m hp")
+		delete(p.effects, "bleeding")
 	case "drain":
 		drain := enemy.attr().hp * 0.22
 		enemy.damage(drain)
@@ -345,7 +365,7 @@ func (p *Player) skill(i int, enemy entity) bool {
 }
 
 func (p *Player) rest() {
-	heal := p.hpcap * 0.02
+	heal := p.hpcap * 0.1
 	heal += 20 + rand.Float64()*20
 	p.hp = min(p.hp+heal, p.hpcap)
 	p.energy = min(p.energy+5, p.energycap)
@@ -400,9 +420,9 @@ func (p *Player) train() {
 
 func (p *Player) flee(enemy entity) {
 	roll := roll()
-	flee := float64(roll) - p.agility*0.5 + enemy.attr().agility*0.2
+	flee := float64(roll) - p.agi()*0.5 + enemy.attr().agi()*0.2
 
-	if flee < 20 || (roll < 95 && p.perk == 6) {
+	if flee < 25 || (roll < 95 && p.is("Survivor")) {
 		fmt.Print(success)
 		fmt.Println("you have fled the battle")
 		p.effects["fled"] = 1
@@ -414,7 +434,10 @@ func (p *Player) flee(enemy entity) {
 	if roll < 68 {
 		fmt.Println("youre too slow and got caught")
 
-		if enemy.attr().effects["stunned"] > 0 {
+		if enemy.attr().has("frozen") && !enemy.attr().has("frozen immunity") {
+			fmt.Print(fail)
+			fmt.Printf("%s tried to attack but is frozen\n", enemy.attr().name)
+		} else if enemy.attr().has("stunned") {
 			fmt.Print(fail)
 			fmt.Printf("%s tried to attack but is stunned\n", enemy.attr().name)
 		} else {
@@ -573,10 +596,12 @@ func (p *Player) setWeapon(index int) {
 	}
 
 	p.hpcap = max(p.hpcap, 50)
+	p.hp = min(p.hp, p.hpcap)
 	p.strength = max(p.strength, 5)
 	p.defense = max(p.defense, 1)
 	p.agility = max(p.agility, 1)
 	p.energycap = max(p.energycap, 10)
+	p.energy = min(p.energy, p.energycap)
 	p.weapon = index
 }
 
@@ -599,6 +624,7 @@ func (p *Player) useWeapon(dmg float64, enemy entity) float64 {
 		dmg += enemy.attr().hp * 0.05
 	case "crimson blade":
 		p.hp = min(p.hp+5, p.hpcap)
+		p.effects["bleeding"] -= 5
 		fmt.Print(" heal by 5")
 	case "dragonscale blade":
 		roll := roll()
@@ -611,7 +637,7 @@ func (p *Player) useWeapon(dmg float64, enemy entity) float64 {
 	case "astral rapier":
 		dmg += enemy.attr().defense * 0.4
 	case "lance":
-		if p.effects["lance"] <= 0 {
+		if !p.has("lance") {
 			dmg += dmg * 0.5
 			p.effects["lance"] = 99
 		}
@@ -625,10 +651,11 @@ func (p *Player) useWeapon(dmg float64, enemy entity) float64 {
 		dmg += enemy.attr().hp * 0.15
 	case "celestial staff":
 		heal := p.hpcap * 0.02
+		p.effects["bleeding"] -= 10
 		p.hp = min(p.hp+heal, p.hpcap)
 		fmt.Printf(" heal by %.1f", heal)
 	case "vanguard lance":
-		if p.effects["lance"] <= 0 {
+		if !p.has("lance") {
 			dmg += dmg
 			p.effects["lance"] = 99
 		}
@@ -653,9 +680,6 @@ func (p *Player) setArmor(index int) {
 		p.hpcap += 10
 		p.defense += 2
 		p.strength += 5
-	case "spiky armor":
-		p.hpcap += 30
-		p.defense += 2
 	case "cloak":
 		p.hpcap += 10
 		p.agility += 3
@@ -694,6 +718,9 @@ func (p *Player) setArmor(index int) {
 	case "reinforced plate":
 		p.hpcap += 500
 		p.agility -= 2
+	case "chainmail":
+		p.hpcap += 150
+		p.defense += 6
 	case "king's helmet":
 		p.hpcap += 120
 		p.defense += 10
@@ -727,9 +754,6 @@ func (p *Player) setArmor(index int) {
 		p.hpcap -= 10
 		p.defense -= 2
 		p.strength -= 5
-	case "spiky armor":
-		p.hpcap -= 30
-		p.defense -= 2
 	case "cloak":
 		p.hpcap -= 10
 		p.agility -= 3
@@ -768,6 +792,9 @@ func (p *Player) setArmor(index int) {
 	case "reinforced plate":
 		p.hpcap -= 500
 		p.agility += 2
+	case "chainmail":
+		p.hpcap -= 150
+		p.defense -= 6
 	case "king's helmet":
 		p.hpcap -= 120
 		p.defense -= 10
@@ -789,29 +816,36 @@ func (p *Player) setArmor(index int) {
 	}
 
 	p.hpcap = max(p.hpcap, 50)
+	p.hp = min(p.hp, p.hpcap)
 	p.strength = max(p.strength, 5)
 	p.defense = max(p.defense, 1)
 	p.agility = max(p.agility, 1)
 	p.energycap = max(p.energycap, 10)
+	p.energy = min(p.energy, p.energycap)
 	p.armor = index
 }
 
 // specific armor effects
 func (p *Player) useArmor(dmg float64) float64 {
 	switch armory[p.armor].name {
-	case "spiky armor", "crystal armor":
-		p.effects["reflect small"] = 5
+	case "crystal armor":
+		p.effects["reflect low"] = 5
 	case "enchanted plate", "conqueror's armor":
 		dmg -= dmg * 0.08
 	case "deepsea mantle":
-		dmg = min(dmg, p.hpcap*0.18+p.defense)
+		dmg = min(dmg, p.hpcap*0.20+p.defense)
 	case "mythril plate":
 		dmg -= dmg * 0.16
+	case "chainmail":
+		dmg -= p.defense * 0.15
 	case "void mantle":
-		dmg = min(dmg, p.hpcap*0.12+p.defense)
+		if !p.has("void mantle") {
+			p.effects["void mantle"] = 99
+			p.effects["immunity"] = 1
+		}
 	case "energy shield":
-		if p.effects["energy shield"] <= 0 {
-			dmg -= dmg * 0.37
+		if !p.has("energy shield") {
+			dmg -= dmg * 0.35
 			p.effects["energy shield"] = 4
 		}
 	case "amethyst armor":
@@ -822,85 +856,51 @@ func (p *Player) useArmor(dmg float64) float64 {
 }
 
 func (p *Player) setPerk(index int) {
-	if index == 0 {
-		p.hp += 20
+	switch perks[index] {
+	case "Resilient":
 		p.hpcap += 20
 		p.defense += 5
-	}
-
-	if index == 1 {
-		p.hp = max(50, p.hp-50)
-		p.hpcap = max(50, p.hpcap-50)
-		p.energy = max(5, p.energy-4)
-		p.energycap = max(5, p.energycap-4)
-	}
-
-	if index == 3 {
+	case "Havoc":
+		p.hpcap -= 50
+		p.energycap -= 4
+	case "Ingenious":
 		p.energycap += 2
-	}
-
-	if index == 6 {
+	case "Survivor":
 		p.agility += 5
-	}
-
-	if index == 8 {
+	case "Shock":
 		p.strength += 5
+	case "Frigid":
+		p.agility -= 5
 	}
 
-	if index == 9 {
-		p.agility = max(1, p.agility-5)
-	}
-
-	// adjustment when switching from old perks
-
-	if p.perk == 0 {
-		p.hp = max(50, p.hp-20)
-		p.hpcap = max(50, p.hpcap-20)
-		p.defense = max(1, p.defense-5)
-	}
-
-	if p.perk == 1 {
-		p.hp += 50
+	switch perks[p.perk] {
+	case "Resilient":
+		p.hpcap -= 20
+		p.defense -= 5
+	case "Havoc":
 		p.hpcap += 50
-		p.energy += 4
 		p.energycap += 4
-	}
-
-	if p.perk == 3 {
-		p.energycap = max(10, p.energycap-2)
-	}
-
-	if p.perk == 6 {
-		p.agility = max(1, p.agility-5)
-	}
-
-	if p.perk == 8 {
-		p.strength = max(5, p.strength-5)
-	}
-
-	if p.perk == 9 {
+	case "Ingenious":
+		p.energycap -= 2
+	case "Survivor":
+		p.agility -= 5
+	case "Shock":
+		p.strength -= 5
+	case "Frigid":
 		p.agility += 5
 	}
 
+	p.hpcap = max(p.hpcap, 50)
+	p.hp = min(p.hp, p.hpcap)
+	p.strength = max(p.strength, 5)
+	p.defense = max(p.defense, 1)
+	p.agility = max(p.agility, 1)
+	p.energycap = max(p.energycap, 10)
+	p.energy = min(p.energy, p.energycap)
 	p.perk = index
 }
 
-func (p Player) getperk() string {
-	perk := []string{
-		"Resilient",
-		"Havoc",
-		"Berserk",
-		"Ingenious",
-		"Poisoner",
-		"Deadman",
-		"Survivor",
-		"Insanity",
-		"Shock",
-		"Frigid",
-		"Ranger",
-	}
-	return perk[p.perk]
-}
+func (p Player) is(perk string) bool { return perks[p.perk] == perk }
 
 func (p Player) energybar() string {
 	bar := bars(40, float64(p.energy), float64(p.energycap))
