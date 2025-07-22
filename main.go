@@ -52,7 +52,7 @@ func selectPerks() int {
 		"[1]  🛡️  Resilient  : increase overall defense",
 		"[2]  🔥 Havoc      : +20% damage, but low starting gold & energy cap",
 		"[3]  🐻 Berserk    : more powerful the lower your hp is",
-		"[4]  🐇 Ingenious  : +2 energy cap, skill cooldown reduced by 2",
+		"[4]  🧙 Wizardry   : skill cooldown reduced by 2",
 		"[5]  🍹 Poisoner   : inflict poisoning effect at the start of battle",
 		"[6]  ⚰️  Deadman    : inflict weaken effect at the start of battle",
 		"[7]  🏃 Survivor   : almost always succeed when fleeing",
@@ -61,6 +61,7 @@ func selectPerks() int {
 		"[10] ❄️  Frigid     : attacks have small chance to freeze the enemy",
 		"[11] 🏹 Ranger     : guess the enemy to gain ace if correct",
 		"[12] ⚔️  Fencer     : basic attack will be done twice at a time ",
+		"[13] 🛠️  Smith      : increase weapon effects",
 	)
 }
 
@@ -207,7 +208,7 @@ func menuAttributes() {
 		strength  = bars(42, player.strength, 400)
 		defense   = bars(42, player.defense, 150)
 		agility   = bars(42, player.agility, 100)
-		energycap = bars(42, float64(player.energycap), 40)
+		energycap = bars(42, float64(player.energycap), 80)
 	)
 
 	fmt.Printf("HP cap     :")
@@ -484,6 +485,7 @@ func battleStaging(enemy entity, exploring bool) {
 
 	if player.is("Ranger") && !exploring {
 		menuRangerGuess(enemy)
+		return
 	}
 
 	name := enemy.attr().name
@@ -496,11 +498,15 @@ func battleStaging(enemy entity, exploring bool) {
 		player.effects["ace"] = 99
 	}
 
-	if name == "jungle warrior" && player.is("Poisoner") {
+	if name == "chieftain" && player.is("Poisoner") {
 		enemy.attr().effects["ace"] = 99
 	}
 
 	if (name == "infernal" || name == "demon") && player.is("Frigid") {
+		enemy.attr().effects["ace"] = 99
+	}
+
+	if name == "sorcerer" && player.is("Wizardry") {
 		enemy.attr().effects["ace"] = 99
 	}
 }
@@ -724,8 +730,9 @@ func menuRangerGuess(enemy entity) {
 		"knight", "wizard", "changeling", "vampire",
 		"demon", "shardling", "genie", "celestial",
 		"shapeshift", "undead", "scorpion", "goblin",
-		"infernal", "vine monster", "arctic warrior",
-		"jungle warrior", "leech monster",
+		"infernal", "vine monster", "arctic",
+		"chieftain", "giant leech", "pirate",
+		"gladiator", "sorcerer",
 	}
 
 	rand.Shuffle(len(names), func(i, j int) {
@@ -765,9 +772,8 @@ func menuPlayerActions(enemy entity) {
 		choice := vivi.Choices(
 			"[1] attack",
 			"[2] skills",
-			"[3] items",
-			"[4] flee",
-			"[5] skip",
+			"[3] flee",
+			"[4] skip",
 		)
 		fmt.Printf("\033[u\033[0J")
 
@@ -820,13 +826,11 @@ func menuPlayerActions(enemy entity) {
 				return
 			}
 		case 2:
-			fmt.Println("\033[38;5;196mnot implemented\033[0m")
-		case 3:
 			fmt.Printf("attempting to escape... ")
 			timer(1700)
 			player.flee(enemy)
 			return
-		case 4:
+		case 3:
 			fmt.Println("  you decided to do nothing")
 			return
 		}
@@ -839,7 +843,7 @@ func exploreDeepForest() {
 
 	for i := 0; i < 10; i++ {
 		fmt.Print("exploring...")
-		timer(1000 + rand.Float64()*2000)
+		timer(500 + rand.Float64()*1800)
 
 		fmt.Print("\r\033[K")
 		n := rand.IntN(80)

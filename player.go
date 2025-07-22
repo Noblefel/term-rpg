@@ -19,9 +19,9 @@ type Player struct {
 
 var perks = []string{
 	"No perk",
-	"Resilient", "Havoc", "Berserk", "Ingenious",
+	"Resilient", "Havoc", "Berserk", "Wizardry",
 	"Poisoner", "Deadman", "Survivor", "Insanity",
-	"Shock", "Frigid", "Ranger", "Fencer",
+	"Shock", "Frigid", "Ranger", "Fencer", "Smith",
 }
 
 var skills = []struct {
@@ -36,10 +36,10 @@ var skills = []struct {
 	{"poison", "attack 85% strength and poison enemy for 3 turns", 5, 5},
 	{"stun", "attack 60% strength and stun enemy for 2 turns", 6, 4},
 	{"icy blast", "attack 60% strength and 30% chance to inflict freeze", 5, 3},
-	{"swift strike", "attack 85% strength (doesnt consume turn)", 4, 4},
-	{"knives throw", "attack 40 fixed damage (doesnt consume turn, no cd)", 4, 0},
-	{"fireball", "deal moderate amount of damage and inflict burning", 7, 5},
-	{"meteor strike", "deal huge amount of damage", 11, 5},
+	{"swift strike", "attack 85% strength (doesnt use turn)", 4, 4},
+	{"knives throw", "attack 40 fixed damage (doesnt use turn, no cd, no wep effects)", 4, 0},
+	{"fireball", "deal moderate amount of damage and inflict burning (no wep effects)", 7, 5},
+	{"meteor strike", "deal huge amount of damage (no wep effects)", 11, 5},
 	{"strengthen", "attack 100% strength to increase damage by 10% for 3 turns", 4, 7},
 	{"focus attack", "attack 100% strength to get focus state for 3 turns", 4, 5},
 	{"devour", "attack 150% strength and heal by 5% hp cap", 8, 5},
@@ -52,7 +52,7 @@ var skills = []struct {
 	{"drain", "take 22% of enemy current hp as damage", 4, 4},
 	{"absorb", "take 10% of enemy hp cap, ignore defense and effects", 5, 6},
 	{"trick", "make the enemy self-target", 4, 3},
-	{"vision", "see enemy attributes (no cost, no cd, doesnt consume turn)", 0, 0},
+	{"vision", "see enemy attributes (no cost, no cd, doesnt use turn)", 0, 0},
 }
 
 var weapons = []struct {
@@ -69,29 +69,29 @@ var weapons = []struct {
 	{"staff", "+8 strength, +2 energy cap", 45},
 	{"gloves", "+6 strength, +4 defense", 40},
 	//rare
-	{"greatsword", "+40 strength", 200},
-	{"flaming sword", "+26 strength, 15% chance to inflict burning", 165},
-	{"rapier", "+20 strength, ignore 25% defense", 172},
-	{"warhammer", "+30 strength, +10% multiplier", 220},
-	{"chain daggers", "+15 strength, +4 agility, -2 defense", 190},
-	{"enchanted staff", "+16 strength, +4 energy cap", 175},
-	{"gauntlets", "+12 strength, +8 defense", 160},
+	{"greatsword", "+40 strength", 300},
+	{"flaming sword", "+26 strength, 15% chance to inflict burning", 247},
+	{"rapier", "+20 strength, ignore 25% defense", 258},
+	{"warhammer", "+30 strength, +10% multiplier", 330},
+	{"chain daggers", "+15 strength, +4 agility, -2 defense", 285},
+	{"enchanted staff", "+16 strength, +4 energy cap", 262},
+	{"gauntlets", "+12 strength, +8 defense", 240},
 	//more rare
-	{"demonic blade", "+30 strength, +5% enemy current hp as damage", 230},
-	{"daunting mace", "+20 strength, 30 hp, 7% self hp cap as damage", 466},
-	{"crimson blade", "+30 strength, heal by 5 hp (fixed)", 260},
-	{"dragonscale blade", "+50 strength, 30% chance to inflict burning or 10% severe burning", 479},
-	{"astral rapier", "+40 strength, ignore 40% defense", 375},
-	{"lance", "+20 strength, +50% multiplier on first attack", 436},
-	{"obsidian warhammer", "+60 strength, +20% multiplier increase", 500},
-	{"holy staff", "+30 strength, +6 energy cap", 400},
-	{"king's gauntlets", "+24 strength, +16 defense", 375},
+	{"demonic blade", "+30 strength, +5% enemy current hp as damage", 690},
+	{"daunting mace", "+20 strength, 30 hp, 7% self hp cap as damage", 1398},
+	{"crimson blade", "+30 strength, heal by 5 hp (fixed)", 780},
+	{"dragonscale blade", "+50 strength, 30% chance to inflict burning or 10% severe burning", 1437},
+	{"astral rapier", "+40 strength, ignore 40% defense", 1125},
+	{"lance", "+20 strength, +50% multiplier on first attack", 1308},
+	{"obsidian warhammer", "+60 strength, +20% multiplier increase", 1500},
+	{"holy staff", "+30 strength, +6 energy cap", 1200},
+	{"king's gauntlets", "+24 strength, +16 defense", 1125},
 	//exceptional
-	{"voidforged rapier", "+40 strength, ignore defense", 1250},
-	{"soulreaper", "+25 strength, +15% enemy current hp as damage", 1333},
-	{"celestial staff", "+40 strength, +8 energy cap, -1 cooldown, heal 2% hp cap", 1500},
-	{"vanguard lance", "+40 strength, +100% multiplier on first attack", 1500},
-	{"earthbreaker", "+100 strength, +25% multiplier increase", 1680},
+	{"voidforged rapier", "+40 strength, ignore defense", 3500},
+	{"soulreaper", "+25 strength, +15% enemy current hp as damage", 3732},
+	{"celestial staff", "+40 strength, +8 energy cap, -1 cooldown, heal 2% hp cap", 4200},
+	{"vanguard lance", "+40 strength, +100% multiplier on first attack", 4200},
+	{"earthbreaker", "+100 strength, +25% multiplier increase", 4704},
 }
 
 var armory = []struct {
@@ -251,7 +251,7 @@ func (p *Player) skill(i int, enemy entity) bool {
 
 	cooldown := skill.cd
 
-	if p.is("Ingenious") {
+	if p.is("Wizardry") {
 		cooldown -= 2
 	}
 
@@ -300,13 +300,16 @@ func (p *Player) skill(i int, enemy entity) bool {
 		p.attackWith(enemy, p.strength*0.85)
 		return false
 	case "knives throw":
+		p.effects["no wep effects"] = 1
 		p.attackWith(enemy, 40)
 		return false
 	case "fireball":
 		enemy.attr().effects["burning"] = 2
+		p.effects["no wep effects"] = 1
 		p.attackWith(enemy, 80)
 	case "meteor strike":
 		dmg := 50 + rand.Float64()*170
+		p.effects["no wep effects"] = 1
 		p.attackWith(enemy, dmg)
 	case "strengthen":
 		p.attackWith(enemy, p.strength) // attack first so it wont get the bonus yet
@@ -607,25 +610,42 @@ func (p *Player) setWeapon(index int) {
 
 // specific weapon effects
 func (p *Player) useWeapon(dmg float64, enemy entity) float64 {
+	mul := 1.0
+
+	if perks[p.perk] == "Fencer" {
+		mul = 0.55
+	}
+
+	if perks[p.perk] == "Smith" {
+		mul = 1.14
+	}
+
+	// for knives throw, fireball, meteor skill
+	if p.has("no wep effects") {
+		delete(p.effects, "no wep effects")
+		return dmg
+	}
+
 	switch weapons[p.weapon].name {
 	case "needle":
-		dmg += enemy.attr().defense * 0.1
+		dmg += enemy.attr().defense * 0.1 * mul
 	case "club":
-		dmg += dmg * 0.05
+		dmg += dmg * 0.05 * mul
 	case "flaming sword":
 		if roll() < 15 {
 			enemy.attr().effects["burning"] = 2
 		}
 	case "rapier":
-		dmg += enemy.attr().defense * 0.25
+		dmg += enemy.attr().defense * 0.25 * mul
 	case "warhammer":
-		dmg += dmg * 0.1
+		dmg += dmg * 0.1 * mul
 	case "demonic blade":
-		dmg += enemy.attr().hp * 0.05
+		dmg += enemy.attr().hp * 0.05 * mul
 	case "crimson blade":
-		p.hp = min(p.hp+5, p.hpcap)
+		heal := 5 * mul
 		p.effects["bleeding"] -= 5
-		fmt.Print(" heal by 5")
+		p.hp = min(p.hp+heal, p.hpcap)
+		fmt.Printf(" heal by %.1f", heal)
 	case "dragonscale blade":
 		roll := roll()
 
@@ -635,32 +655,32 @@ func (p *Player) useWeapon(dmg float64, enemy entity) float64 {
 			enemy.attr().effects["burning"] = 2
 		}
 	case "astral rapier":
-		dmg += enemy.attr().defense * 0.4
+		dmg += enemy.attr().defense * 0.4 * mul
 	case "lance":
 		if !p.has("lance") {
-			dmg += dmg * 0.5
+			dmg += dmg * 0.5 * mul
 			p.effects["lance"] = 99
 		}
 	case "obsidian warhammer":
-		dmg += dmg * 0.2
+		dmg += dmg * 0.2 * mul
 	case "daunting mace":
-		dmg += p.hpcap * 0.07
+		dmg += p.hpcap * 0.07 * mul
 	case "voidforged rapier":
-		dmg += enemy.attr().defense
+		dmg += enemy.attr().defense * mul
 	case "soulreaper":
-		dmg += enemy.attr().hp * 0.15
+		dmg += enemy.attr().hp * 0.15 * mul
 	case "celestial staff":
-		heal := p.hpcap * 0.02
+		heal := p.hpcap * 0.02 * mul
 		p.effects["bleeding"] -= 10
 		p.hp = min(p.hp+heal, p.hpcap)
 		fmt.Printf(" heal by %.1f", heal)
 	case "vanguard lance":
 		if !p.has("lance") {
-			dmg += dmg
+			dmg += dmg * mul
 			p.effects["lance"] = 99
 		}
 	case "earthbreaker":
-		dmg += dmg * 0.25
+		dmg += dmg * 0.25 * mul
 	}
 
 	return dmg
@@ -863,7 +883,7 @@ func (p *Player) setPerk(index int) {
 	case "Havoc":
 		p.hpcap -= 50
 		p.energycap -= 4
-	case "Ingenious":
+	case "Wizardry":
 		p.energycap += 2
 	case "Survivor":
 		p.agility += 5
@@ -880,7 +900,7 @@ func (p *Player) setPerk(index int) {
 	case "Havoc":
 		p.hpcap += 50
 		p.energycap += 4
-	case "Ingenious":
+	case "Wizardry":
 		p.energycap -= 2
 	case "Survivor":
 		p.agility -= 5

@@ -381,7 +381,7 @@ func TestAttributes_Damage(t *testing.T) {
 	})
 
 	t.Run("frozen effect", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		target.hp = 100
 		target.effects["frozen"] = 1
 		target.damage(10)
@@ -390,7 +390,7 @@ func TestAttributes_Damage(t *testing.T) {
 			t.Errorf("damage should be 20 (shatter x2 bonus), got %.1f", 100-target.hp)
 		}
 
-		rolltest = 75
+		fixedroll = 75
 		target.hp = 100
 		target.effects["frozen"] = 1
 		target.defense = 10

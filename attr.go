@@ -83,7 +83,8 @@ func (attr *attributes) attackWith(target entity, dmg float64) {
 }
 
 func (attr *attributes) applyEffects() {
-	// some effects ignore half defense because they are too high
+	// effects may ignore some defense for balance purposes
+	// simply because they're too high for low damage spam like poison
 
 	if attr.has("poisoned") && !attr.has("poison immunity") {
 		fmt.Printf("  %s suffer from poison", attr.name)
@@ -222,6 +223,7 @@ func (attr attributes) has(effect string) bool {
 	return attr.effects[effect] > 0
 }
 
+// called at the end of every turn
 func (attr attributes) decrementEffect() {
 	for k := range attr.effects {
 		if attr.effects[k] <= 0 {

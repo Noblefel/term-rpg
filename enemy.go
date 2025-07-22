@@ -7,23 +7,26 @@ import (
 
 func spawn() entity {
 	var enemies = []func() entity{
-		newKnight,
-		newWizard,
-		newChangeling,
-		newVampire,
-		newDemon,
-		newShardling,
-		newGenie,
-		newCelestial,
-		newShapeshift,
-		newUndead,
-		newScorpion,
-		newGoblin,
-		newInfernal,
-		newVineMonster,
-		newArcticWarrior,
-		newJungleWarrior,
-		newLeechMonster,
+		spawnKnight,
+		spawnWizard,
+		spawnChangeling,
+		spawnVampire,
+		spawnDemon,
+		spawnShardling,
+		spawnGenie,
+		spawnCelestial,
+		spawnShapeshift,
+		spawnUndead,
+		spawnScorpion,
+		spawnGoblin,
+		spawnInfernal,
+		spawnVineMonster,
+		spawnArctic,
+		spawnChieftain,
+		spawnGiantLeech,
+		spawnPirate,
+		spawnGladiator,
+		spawnSorcerer,
 	}
 
 	spawn := enemies[rand.IntN(len(enemies))]
@@ -34,7 +37,7 @@ type knight struct {
 	attributes
 }
 
-func newKnight() entity {
+func spawnKnight() entity {
 	attr := attributes{
 		name:     "knight",
 		hp:       scale(210, 25),
@@ -79,7 +82,7 @@ type wizard struct {
 	attributes
 }
 
-func newWizard() entity {
+func spawnWizard() entity {
 	attr := attributes{
 		name:     "wizard",
 		hp:       scale(132, 11.5),
@@ -136,7 +139,7 @@ type changeling struct {
 	mimic bool
 }
 
-func newChangeling() entity {
+func spawnChangeling() entity {
 	attr := attributes{
 		name:     "changeling",
 		hp:       100,
@@ -167,7 +170,7 @@ type vampire struct {
 	attributes
 }
 
-func newVampire() entity {
+func spawnVampire() entity {
 	attr := attributes{
 		name:     "vampire",
 		hp:       scale(180, 21.4),
@@ -218,7 +221,7 @@ type demon struct {
 	attributes
 }
 
-func newDemon() entity {
+func spawnDemon() entity {
 	attr := attributes{
 		name:     "demon",
 		hp:       scale(212, 31),
@@ -234,6 +237,7 @@ func newDemon() entity {
 func (d *demon) attack(target entity) {
 	fmt.Print(success)
 	roll := roll()
+	ignored := target.attr().defense / 2
 
 	if roll < 60 {
 		messages := []string{
@@ -242,42 +246,38 @@ func (d *demon) attack(target entity) {
 			"demon conjure \033[38;5;226mlife draining\033[0m magic!",
 		}
 
-		drain := d.strength + target.attr().hp*0.03
-		hp := max(target.attr().hp-drain, 0)
-		target.setHP(hp)
 		fmt.Printf(messages[rand.IntN(len(messages))])
-		fmt.Printf(" \033[38;5;198m%.1f\033[0m\n", drain)
-		return
-	}
-
-	if roll < 75 {
+		dmg := d.strength + ignored
+		dmg += target.attr().hp * 0.03
+		d.attackWith(target, dmg)
+	} else if roll < 75 {
 		fmt.Print("demon draw upon the power of \033[38;5;226mhell fire\033[0m!")
 		target.attr().effects["burning"] = 3
-		d.attackWith(target, d.strength*0.8)
-		return
-	}
+		dmg := d.strength*0.8 + ignored
+		d.attackWith(target, dmg)
+	} else {
+		messages := []string{
+			"demon charged at you!",
+			"demon thrusts its trident at you!",
+			"demon swung its trident and slashes you!",
+			"demon lunged before punching you in the gut!",
+		}
 
-	messages := []string{
-		"demon charged at you!",
-		"demon thrusts its trident at you!",
-		"demon swung its trident and slashes you!",
-		"demon lunged before punching you in the gut!",
+		fmt.Printf(messages[rand.IntN(len(messages))])
+		d.attackWith(target, d.strength+ignored)
 	}
-
-	fmt.Printf(messages[rand.IntN(len(messages))])
-	d.attackWith(target, d.strength)
 }
 
 type shardling struct {
 	attributes
 }
 
-func newShardling() entity {
+func spawnShardling() entity {
 	attr := attributes{
 		name:     "shardling",
 		hp:       scale(100, 10),
 		hpcap:    scale(100, 10),
-		defense:  scale(40, 2.65),
+		defense:  scale(30, 2.65),
 		strength: scale(27, 2.42),
 		agility:  scale(6, 0.18),
 		effects:  make(map[string]int),
@@ -311,7 +311,7 @@ type genie struct {
 	attributes
 }
 
-func newGenie() entity {
+func spawnGenie() entity {
 	attr := attributes{
 		name:     "genie",
 		hp:       scale(200, 20),
@@ -388,7 +388,7 @@ type celestial struct {
 	attributes
 }
 
-func newCelestial() entity {
+func spawnCelestial() entity {
 	attr := attributes{
 		name:     "celestial being",
 		hp:       scale(300, 40),
@@ -441,7 +441,7 @@ type shapeshift struct {
 	mimic bool
 }
 
-func newShapeshift() entity {
+func spawnShapeshift() entity {
 	attr := attributes{
 		name:     "shapeshift",
 		hp:       80,
@@ -473,7 +473,7 @@ type undead struct {
 	attributes
 }
 
-func newUndead() entity {
+func spawnUndead() entity {
 	attr := attributes{
 		name:     "undead",
 		hp:       scale(181, 20.8),
@@ -518,7 +518,7 @@ type scorpion struct {
 	attributes
 }
 
-func newScorpion() entity {
+func spawnScorpion() entity {
 	attr := attributes{
 		name:     "scorpion",
 		hp:       scale(150, 12),
@@ -565,7 +565,7 @@ type goblin struct {
 	attributes
 }
 
-func newGoblin() entity {
+func spawnGoblin() entity {
 	attr := attributes{
 		name:     "goblin",
 		hp:       scale(130, 11),
@@ -610,7 +610,7 @@ type infernal struct {
 	attributes
 }
 
-func newInfernal() entity {
+func spawnInfernal() entity {
 	attr := attributes{
 		name:     "infernal",
 		hp:       scale(163, 19),
@@ -665,7 +665,7 @@ type vineMonster struct {
 	attributes
 }
 
-func newVineMonster() entity {
+func spawnVineMonster() entity {
 	attr := attributes{
 		name:     "vine monster",
 		hp:       scale(200, 23),
@@ -715,25 +715,25 @@ func (v *vineMonster) attack(target entity) {
 	v.attackWith(target, v.strength)
 }
 
-type arcticWarrior struct {
+type arctic struct {
 	attributes
 }
 
-func newArcticWarrior() entity {
+func spawnArctic() entity {
 	attr := attributes{
 		name:     "arctic warrior",
-		hp:       scale(175, 22),
-		hpcap:    scale(175, 22),
+		hp:       scale(185, 22),
+		hpcap:    scale(185, 22),
 		defense:  scale(20, 2.35),
 		strength: scale(40, 3.05),
 		agility:  scale(10, 0.27),
 		effects:  make(map[string]int),
 	}
 	attr.effects["frozen immunity"] = 99
-	return &arcticWarrior{attr}
+	return &arctic{attr}
 }
 
-func (aw *arcticWarrior) attack(target entity) {
+func (a *arctic) attack(target entity) {
 	fmt.Print(success)
 	roll := roll()
 
@@ -748,12 +748,12 @@ func (aw *arcticWarrior) attack(target entity) {
 		fmt.Println(messages[rand.IntN(len(messages))])
 	} else if roll < 35 {
 		fmt.Print("arctic warrior cast \033[38;5;226msnowstorm\033[0m!")
-		dmg := aw.strength*0.2 + rand.Float64()*60
-		aw.attackWith(target, dmg)
+		dmg := a.strength*0.2 + rand.Float64()*60
+		a.attackWith(target, dmg)
 	} else if roll < 43 {
 		fmt.Print("arctic warrior cast \033[38;5;226mavalanche\033[0m!")
-		dmg := aw.strength + rand.Float64()*scale(20, 1)
-		aw.attackWith(target, dmg)
+		dmg := a.strength + rand.Float64()*scale(20, 1)
+		a.attackWith(target, dmg)
 	} else {
 		messages := []string{
 			"arctic warrior unleash a sweeping arc of ice!",
@@ -763,86 +763,86 @@ func (aw *arcticWarrior) attack(target entity) {
 		}
 
 		fmt.Print(messages[rand.IntN(len(messages))])
-		aw.attackWith(target, aw.strength)
+		a.attackWith(target, a.strength)
 	}
 }
 
-type jungleWarrior struct {
+type chieftain struct {
 	attributes
 }
 
-func newJungleWarrior() entity {
+func spawnChieftain() entity {
 	attr := attributes{
-		name:     "jungle warrior",
-		hp:       scale(175, 22),
-		hpcap:    scale(175, 22),
+		name:     "chieftain",
+		hp:       scale(185, 22),
+		hpcap:    scale(185, 22),
 		defense:  scale(18, 2.2),
 		strength: scale(42, 3.15),
 		agility:  scale(11, 0.275),
 		effects:  make(map[string]int),
 	}
 	attr.effects["poison immunity"] = 99
-	return &jungleWarrior{attr}
+	return &chieftain{attr}
 }
 
-func (jw *jungleWarrior) attack(target entity) {
+func (c *chieftain) attack(target entity) {
 	fmt.Print(success)
 	roll := roll()
 
 	if roll < 14 {
-		fmt.Print("jungle warrior strike \033[38;5;226mferociously\033[0m!")
+		fmt.Print("chieftain strike \033[38;5;226mferociously\033[0m!")
 		target.attr().effects["shiver"] = 3
-		jw.attackWith(target, jw.strength)
+		c.attackWith(target, c.strength)
 	} else if roll < 28 {
-		fmt.Print("jungle warrior calls upon the help of \033[38;5;226mancestral spirits\033[0m!")
-		jw.effects["vitality"] = 4
-		jw.attackWith(target, jw.strength*0.8)
+		fmt.Print("chieftain calls upon the help of \033[38;5;226mancestral spirits\033[0m!")
+		c.effects["vitality"] = 4
+		c.attackWith(target, c.strength*0.8)
 	} else if roll < 35 {
-		fmt.Print("jungle warrior let out \033[38;5;226mancestral roar\033[0m as he charge!")
+		fmt.Print("chieftain let out \033[38;5;226mancestral roar\033[0m as he charge!")
 		target.attr().effects["shiver"] = 2
-		jw.effects["vitality"] = 2
-		jw.attackWith(target, jw.strength*1.3)
+		c.effects["vitality"] = 2
+		c.attackWith(target, c.strength*1.3)
 	} else if roll < 45 {
-		fmt.Print("jungle warrior leap from a tree and slam onto you!")
-		jw.attackWith(target, jw.strength*1.2)
+		fmt.Print("chieftain leap from a tree and slam onto you!")
+		c.attackWith(target, c.strength*1.2)
 	} else {
 		messages := []string{
-			"jungle warrior landed a blow with his primal club!",
-			"jungle warrior thrust his primal spear!",
-			"jungle warrior swung his primal club!",
+			"chieftain landed a blow with his primal club!",
+			"chieftain thrust his primal spear!",
+			"chieftain swung his primal club!",
 		}
 
 		fmt.Print(messages[rand.IntN(len(messages))])
-		jw.attackWith(target, jw.strength)
+		c.attackWith(target, c.strength)
 	}
 }
 
-type leechMonster struct {
+type giantLeech struct {
 	attributes
 }
 
-func newLeechMonster() entity {
+func spawnGiantLeech() entity {
 	attr := attributes{
-		name:     "leech monster",
-		hp:       scale(175, 22),
-		hpcap:    scale(175, 22),
-		defense:  scale(18, 2.2),
-		strength: scale(42, 3.15),
-		agility:  scale(11, 0.275),
+		name:     "giant leech",
+		hp:       scale(158, 14),
+		hpcap:    scale(158, 14),
+		defense:  scale(14, 1.8),
+		strength: scale(36, 2.82),
+		agility:  scale(7, 0.25),
 		effects:  make(map[string]int),
 	}
-	return &leechMonster{attr}
+	return &giantLeech{attr}
 }
 
-func (lm *leechMonster) attack(target entity) {
+func (lm *giantLeech) attack(target entity) {
 	fmt.Print(success)
 	roll := roll()
 
 	if roll < 25 {
 		messages := []string{
-			"leech monster \033[38;5;226mbites\033[0m down hard!",
-			"leech monster \033[38;5;226mbites\033[0m tear through your flesh",
-			"leech monster draining attack left you \033[38;5;226mwounded\033[0m!",
+			"giant leech \033[38;5;226mbites\033[0m down hard!",
+			"giant leech \033[38;5;226mbites\033[0m tear through your flesh",
+			"giant leech draining attack left you \033[38;5;226mwounded\033[0m!",
 		}
 
 		target.attr().effects["bleeding"] += 10
@@ -854,14 +854,154 @@ func (lm *leechMonster) attack(target entity) {
 	}
 
 	messages := []string{
-		"leech monster drains your life blood",
-		"leech monster viciously drain large amount of blood",
-		"leech monster latches on before absorbing your blood",
-		"leech monster lacthes on and suck large amount of blood",
+		"giant leech drains your life blood",
+		"giant leech viciously drain large amount of blood",
+		"giant leech latches on before absorbing your blood",
+		"giant leech lacthes on and suck large amount of blood",
 	}
 
 	drain := target.attr().hp*0.2 + lm.strength
 	drain -= target.attr().defense * 1.3 // target defense value/effectiveness +130%
 	fmt.Print(messages[rand.IntN(len(messages))])
 	lm.attackWith(target, drain)
+}
+
+type pirate struct {
+	attributes
+}
+
+func spawnPirate() entity {
+	attr := attributes{
+		name:     "pirate",
+		hp:       scale(160, 18),
+		hpcap:    scale(160, 18),
+		defense:  scale(14, 1.8),
+		strength: scale(38, 3.05),
+		agility:  scale(11, 0.277),
+		effects:  make(map[string]int),
+	}
+	return &pirate{attr}
+}
+
+func (p *pirate) attack(target entity) {
+	fmt.Print(success)
+	roll := roll()
+
+	if p, ok := target.(*Player); ok && roll < 30 {
+		messages := []string{
+			"in a swift move, the pirate yanks away your satchel!",
+			"in a swift move, the pirate snatches your satchel!",
+			"in a swift move, the pirate grabs your loot bag!",
+			"pirate shoots a grappling hook onto your loot bag!",
+		}
+
+		fmt.Print(messages[rand.IntN(len(messages))])
+		// 5 + 1-5% player's current gold
+		steal := 5
+		steal += p.gold * (1 + rand.IntN(5)) / 100
+		fmt.Printf(" \033[38;5;226mstole\033[0m %d gold\n", steal)
+		p.gold = max(p.gold-steal, 0)
+	} else if roll < 60 {
+		fmt.Print("the pirate whirls his scimitar in a savage arc!")
+		p.effects["bleeding"] += 5
+		p.attackWith(target, p.strength*1.1)
+	} else {
+		messages := []string{
+			"the pirate lunges with a rusty cutlass",
+			"the pirate slashes you with a scimitar",
+			"the pirate shoots his flintlock at you",
+			"the pirate heavy hook swings down",
+		}
+
+		fmt.Print(messages[rand.IntN(len(messages))])
+		p.attackWith(target, p.strength)
+	}
+}
+
+type gladiator struct {
+	attributes
+}
+
+func spawnGladiator() entity {
+	attr := attributes{
+		name:     "gladiator",
+		hp:       scale(200, 23.5),
+		hpcap:    scale(200, 23.5),
+		defense:  scale(19, 2.35),
+		strength: scale(43, 3.2),
+		agility:  scale(10, 0.26),
+		effects:  make(map[string]int),
+	}
+	return &gladiator{attr}
+}
+
+func (g *gladiator) attack(target entity) {
+	g._attack(target)
+	g._attack(target)
+}
+
+func (g *gladiator) _attack(target entity) {
+	fmt.Print(success)
+
+	if roll() < 15 {
+		fmt.Println("the gladiator raise its trident and \033[38;5;226mtaunted\033[0m you!")
+		g.effects["strengthen"] = 2
+		return
+	}
+
+	messages := []string{
+		"the gladiator charges forward!",
+		"the gladiator bashes with his shield!",
+		"the gladiator swung its greatsword!",
+		"the gladiator delivers a sweeping kick!",
+		"the gladiator thrusts his trident!",
+		"the gladiator brings down its mighty trident!",
+		"the gladiator strikes from behind!",
+		"the gladiator pivots and brings down its greatsword!",
+		"the gladiator sidestepped and swung its trident!",
+		"the gladiator lunges again for the second time!",
+		"the gladiator stepped back, throwing its trident!",
+	}
+
+	fmt.Print(messages[rand.IntN(len(messages))])
+	g.attackWith(target, g.strength*0.6)
+}
+
+type sorcerer struct {
+	attributes
+}
+
+func spawnSorcerer() entity {
+	attr := attributes{
+		name:     "sorcerer",
+		hp:       scale(140, 12),
+		hpcap:    scale(140, 12),
+		defense:  scale(12, 0.9),
+		strength: scale(20, 2.5),
+		agility:  scale(5, 0.13),
+		effects:  make(map[string]int),
+	}
+	return &sorcerer{attr}
+}
+
+func (s *sorcerer) attack(target entity) {
+	fmt.Print(success)
+	// no variation attack because this enemy ignores everything anyway, why make it even broken
+
+	messages := []string{
+		"the sorcerer casts a ray of sickness",
+		"the sorcerer taps directly into your soul!",
+		"the sorcerer conjures the power of pure fire!",
+		"the sorcerer hurls shards made of void energy!",
+		"the sorcerer casts a barrage of astral attacks!",
+		"the sorcerer crushes you with telekinetic force!",
+		"the sorecrer sends a barrage of astral projectiles!",
+		"the sorcerer sends a ripple of astral force down on you!",
+	}
+
+	fmt.Print(messages[rand.IntN(len(messages))])
+	newhp := target.attr().hp - s.strength
+	newhp = max(newhp, 0)
+	target.setHP(newhp)
+	fmt.Printf(" \033[38;5;198m%.1f\033[0m\n", s.strength)
 }

@@ -83,7 +83,7 @@ func TestPlayer_AttackWith(t *testing.T) {
 	})
 
 	t.Run("insanity perk", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		p.perk = 8
 		p.attackWith(p, p.strength)
@@ -100,7 +100,7 @@ func TestPlayer_AttackWith(t *testing.T) {
 			)
 		}
 
-		rolltest = 50
+		fixedroll = 50
 		p.hp = 100
 		p.attackWith(p, p.strength)
 		mindmg = p.strength - 10
@@ -118,7 +118,7 @@ func TestPlayer_AttackWith(t *testing.T) {
 	})
 
 	t.Run("frigid perk", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		p.perk = 10
 		p.attackWith(p, 1)
@@ -206,7 +206,7 @@ func TestPlayer_Skill(t *testing.T) {
 		}
 	})
 
-	t.Run("with ingenious perk", func(t *testing.T) {
+	t.Run("with wizardry perk", func(t *testing.T) {
 		i := find("charge")
 		p := newTestPlayer()
 		p.perk = 4
@@ -338,7 +338,7 @@ func TestPlayer_Skill(t *testing.T) {
 	})
 
 	t.Run("icy blast", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		i := find("icy blast")
 		p := newTestPlayer()
 		t.Log(p.attributes)
@@ -585,7 +585,7 @@ func TestPlayer_Rest(t *testing.T) {
 
 func TestPlayer_Train(t *testing.T) {
 	t.Run("fail roll", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := &Player{}
 		p.train()
 
@@ -601,7 +601,7 @@ func TestPlayer_Train(t *testing.T) {
 	})
 
 	t.Run("hp cap roll", func(t *testing.T) {
-		rolltest = 51
+		fixedroll = 51
 		p := &Player{}
 		p.train()
 
@@ -611,7 +611,7 @@ func TestPlayer_Train(t *testing.T) {
 	})
 
 	t.Run("strength roll", func(t *testing.T) {
-		rolltest = 62
+		fixedroll = 62
 		p := &Player{}
 		p.train()
 
@@ -621,7 +621,7 @@ func TestPlayer_Train(t *testing.T) {
 	})
 
 	t.Run("defense roll", func(t *testing.T) {
-		rolltest = 73
+		fixedroll = 73
 		p := &Player{}
 		p.train()
 
@@ -631,7 +631,7 @@ func TestPlayer_Train(t *testing.T) {
 	})
 
 	t.Run("agility roll", func(t *testing.T) {
-		rolltest = 84
+		fixedroll = 84
 		p := &Player{}
 		p.train()
 
@@ -641,7 +641,7 @@ func TestPlayer_Train(t *testing.T) {
 	})
 
 	t.Run("energy cap roll", func(t *testing.T) {
-		rolltest = 95
+		fixedroll = 95
 		p := &Player{}
 		p.train()
 
@@ -664,7 +664,7 @@ func TestPlayer_Flee(t *testing.T) {
 	})
 
 	t.Run("too slow and get caught", func(t *testing.T) {
-		rolltest = 25
+		fixedroll = 25
 		e := newTestPlayer()
 		e.agility = 99999
 		p := newTestPlayer()
@@ -676,7 +676,7 @@ func TestPlayer_Flee(t *testing.T) {
 	})
 
 	t.Run("too slow and get caught but enemy is frozen", func(t *testing.T) {
-		rolltest = 25
+		fixedroll = 25
 		e := newTestPlayer()
 		e.effects["frozen"] = 1
 		p := newTestPlayer()
@@ -689,7 +689,7 @@ func TestPlayer_Flee(t *testing.T) {
 	})
 
 	t.Run("too slow and get caught but enemy is stunned", func(t *testing.T) {
-		rolltest = 25
+		fixedroll = 25
 		e := newTestPlayer()
 		e.effects["stunned"] = 1
 		p := newTestPlayer()
@@ -702,7 +702,7 @@ func TestPlayer_Flee(t *testing.T) {
 	})
 
 	t.Run("slipped in the mud", func(t *testing.T) {
-		rolltest = 68
+		fixedroll = 68
 		p := newTestPlayer()
 		p.hp = 100
 		p.flee(p)
@@ -713,7 +713,7 @@ func TestPlayer_Flee(t *testing.T) {
 	})
 
 	t.Run("fell into a ditch", func(t *testing.T) {
-		rolltest = 76
+		fixedroll = 76
 		p := newTestPlayer()
 		p.hp = 100
 		p.flee(p)
@@ -724,7 +724,7 @@ func TestPlayer_Flee(t *testing.T) {
 	})
 
 	t.Run("walked into a trap", func(t *testing.T) {
-		rolltest = 84
+		fixedroll = 84
 		p := newTestPlayer()
 		p.hp = 100
 		p.flee(p)
@@ -753,7 +753,21 @@ func TestPlayer_useWeapon(t *testing.T) {
 		dmg := 20 + p.defense*0.1
 		got := p.useWeapon(20, p)
 		if got != dmg {
-			t.Errorf("damage should be %.1f (ignore 25%% defense), got %.1f", dmg, got)
+			t.Errorf("damage should be %.1f (ignore 10%% defense), got %.1f", dmg, got)
+		}
+
+		p.perk = 12
+		dmg = 20 + p.defense*0.055
+		got = p.useWeapon(20, p)
+		if got != dmg {
+			t.Errorf("(FENCER) damage should be %.1f (ignore 5.5%% defense), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 20 + p.defense*0.114
+		got = p.useWeapon(20, p)
+		if got != dmg {
+			t.Errorf("(SMITH) damage should be %.1f (ignore 11.4%% defense), got %.1f", dmg, got)
 		}
 	})
 
@@ -763,14 +777,27 @@ func TestPlayer_useWeapon(t *testing.T) {
 
 		dmg := 100 + 100*0.05
 		got := p.useWeapon(100, p)
-
 		if got != dmg {
 			t.Errorf("damage should be %.1f (5%% bonus), got %.1f", dmg, got)
+		}
+
+		p.perk = 12
+		dmg = 100 + 100*0.0275
+		got = p.useWeapon(100, p)
+		if got != dmg {
+			t.Errorf("(FENCER) damage should be %.1f (2.75%% bonus), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 100 + 100*0.057
+		got = p.useWeapon(100, p)
+		if got != dmg {
+			t.Errorf("(SMITH) damage should be %.1f (5.7%% bonus), got %.1f", dmg, got)
 		}
 	})
 
 	t.Run("flaming sword", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		p.weapon = find("flaming sword")
 		p.useWeapon(10, p)
@@ -790,6 +817,20 @@ func TestPlayer_useWeapon(t *testing.T) {
 		if got != dmg {
 			t.Errorf("damage should be %.1f (ignore 25%% defense), got %.1f", dmg, got)
 		}
+
+		p.perk = 12
+		dmg = 20 + p.defense*0.1375
+		got = p.useWeapon(20, p)
+		if got != dmg {
+			t.Errorf("(FENCER) damage should be %.1f (ignore 13.75%% defense), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 20 + p.defense*0.285
+		got = p.useWeapon(20, p)
+		if got != dmg {
+			t.Errorf("(SMITH) damage should be %.1f (ignore 28.5%% defense), got %.1f", dmg, got)
+		}
 	})
 
 	t.Run("warhammer", func(t *testing.T) {
@@ -800,6 +841,20 @@ func TestPlayer_useWeapon(t *testing.T) {
 		got := p.useWeapon(100, p)
 		if got != dmg {
 			t.Errorf("damage should be %.1f (10%% bonus), got %.1f", dmg, got)
+		}
+
+		p.perk = 12
+		dmg = 100 + 100*0.055
+		got = p.useWeapon(100, p)
+		if got != dmg {
+			t.Errorf("(FENCER) damage should be %.1f (5.5%% bonus), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 100 + 100*0.114
+		got = p.useWeapon(100, p)
+		if got != dmg {
+			t.Errorf("(SMITH) damage should be %.1f (11.4%% bonus), got %.1f", dmg, got)
 		}
 	})
 
@@ -813,6 +868,20 @@ func TestPlayer_useWeapon(t *testing.T) {
 		if got != dmg {
 			t.Errorf("damage should be %.1f (5%% target hp), got %.1f", dmg, got)
 		}
+
+		p.perk = 12
+		dmg = 10 + p.hp*0.0275
+		got = p.useWeapon(10, p)
+		if got != dmg {
+			t.Errorf("(FENCER) damage should be %.1f (2.75%% target hp), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 10 + p.hp*0.057
+		got = p.useWeapon(10, p)
+		if got != dmg {
+			t.Errorf("(SMITH) damage should be %.1f (5.7%% target hp), got %.1f", dmg, got)
+		}
 	})
 
 	t.Run("daunting mace", func(t *testing.T) {
@@ -823,6 +892,20 @@ func TestPlayer_useWeapon(t *testing.T) {
 		got := p.useWeapon(p.strength, p)
 		if got != dmg {
 			t.Errorf("damage should be %.1f (+7%% self hp cap as damage), got %.1f", dmg, got)
+		}
+
+		p.perk = 12
+		dmg = p.strength + p.hpcap*0.0385
+		got = p.useWeapon(p.strength, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (+3.85%% self hp cap as damage), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = p.strength + p.hpcap*0.0798
+		got = p.useWeapon(p.strength, p)
+		if got != dmg {
+			t.Errorf("(SMITH) damage should be %.1f (+7.98%% self hp cap as damage), got %.1f", dmg, got)
 		}
 	})
 
@@ -835,10 +918,24 @@ func TestPlayer_useWeapon(t *testing.T) {
 		if p.hp != 5 {
 			t.Errorf("should recover hp by 5 (fixed), got %.1f", p.hp)
 		}
+
+		p.perk = 12
+		p.hp = 0
+		p.useWeapon(10, p)
+		if p.hp != 2.75 {
+			t.Errorf("(FENCER) should recover hp by 2.75 (fixed), got %.1f", p.hp)
+		}
+
+		p.perk = 13
+		p.hp = 0
+		p.useWeapon(10, p)
+		if !equal(p.hp, 5.7) {
+			t.Errorf("(SMITH) should recover hp by 5.7 (fixed), got %.1f", p.hp)
+		}
 	})
 
 	t.Run("dragonscale blade", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		p.weapon = find("dragonscale blade")
 		p.useWeapon(10, p)
@@ -847,7 +944,7 @@ func TestPlayer_useWeapon(t *testing.T) {
 			t.Errorf("should inflict burning severe for 2 turns, got %d", p.effects["burning severe"])
 		}
 
-		rolltest = 10
+		fixedroll = 10
 		p.useWeapon(10, p)
 
 		if p.effects["burning"] != 2 {
@@ -865,21 +962,51 @@ func TestPlayer_useWeapon(t *testing.T) {
 		if got != dmg {
 			t.Errorf("damage should be %.1f (ignore 40%% defense), got %.1f", dmg, got)
 		}
+
+		p.perk = 12
+		dmg = 20 + p.defense*0.22
+		got = p.useWeapon(20, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (ignore 22%% defense), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 20 + p.defense*0.456
+		got = p.useWeapon(20, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (ignore 45.6%% defense), got %.1f", dmg, got)
+		}
 	})
 
 	t.Run("lance", func(t *testing.T) {
 		p := newTestPlayer()
 		p.weapon = find("lance")
 
-		dmg := p.strength * 1.5
-		got := p.useWeapon(p.strength, p)
+		dmg := 10 + 10*0.5
+		got := p.useWeapon(10, p)
 		if got != dmg {
 			t.Errorf("damage should be %.1f (50%% bonus), got %.1f", dmg, got)
 		}
 
-		got = p.useWeapon(p.strength, p)
-		if got != p.strength {
+		got = p.useWeapon(10, p)
+		if got != 10 {
 			t.Errorf("damage should not be modified again, got %.1f", got)
+		}
+
+		clear(p.effects)
+		p.perk = 12
+		dmg = 10 + 10*0.275
+		got = p.useWeapon(10, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (27.5%% bonus), got %.1f", dmg, got)
+		}
+
+		clear(p.effects)
+		p.perk = 13
+		dmg = 10 + 10*0.57
+		got = p.useWeapon(10, p)
+		if !equal(got, dmg) {
+			t.Errorf("(SMITH) damage should be %.1f (57%% bonus), got %.1f", dmg, got)
 		}
 	})
 
@@ -889,8 +1016,22 @@ func TestPlayer_useWeapon(t *testing.T) {
 
 		dmg := 100 + 100*0.2
 		got := p.useWeapon(100, p)
-		if got != dmg {
+		if !equal(got, dmg) {
 			t.Errorf("damage should be %.1f (20%% bonus), got %.1f", dmg, got)
+		}
+
+		p.perk = 12
+		dmg = 100 + 100*0.11
+		got = p.useWeapon(100, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (11%% bonus), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 100 + 100*0.228
+		got = p.useWeapon(100, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (22.8%% bonus), got %.1f", dmg, got)
 		}
 	})
 
@@ -901,8 +1042,22 @@ func TestPlayer_useWeapon(t *testing.T) {
 
 		dmg := 20 + p.defense
 		got := p.useWeapon(20, p)
-		if got != dmg {
-			t.Errorf("damage should be %.1f (ignore defense), got %.1f", dmg, got)
+		if !equal(got, dmg) {
+			t.Errorf("damage should be %.1f (ignore 100%% defense), got %.1f", dmg, got)
+		}
+
+		p.perk = 12
+		dmg = 20 + p.defense*0.55
+		got = p.useWeapon(20, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (ignore 55%% defense), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 20 + p.defense*1.14
+		got = p.useWeapon(20, p)
+		if !equal(got, dmg) {
+			t.Errorf("(SMITH) damage should be %.1f (ignore 100%% defense + 14%% as damage), got %.1f", dmg, got)
 		}
 	})
 
@@ -913,8 +1068,22 @@ func TestPlayer_useWeapon(t *testing.T) {
 
 		dmg := 10 + p.hp*0.15
 		got := p.useWeapon(10, p)
-		if got != dmg {
+		if !equal(got, dmg) {
 			t.Errorf("damage should be %.1f (15%% target hp), got %.1f", dmg, got)
+		}
+
+		p.perk = 12
+		dmg = 10 + p.hp*0.0825
+		got = p.useWeapon(10, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (8.25%% target hp), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 10 + p.hp*0.171
+		got = p.useWeapon(10, p)
+		if !equal(got, dmg) {
+			t.Errorf("(SMITH) damage should be %.1f (17.1%% target hp), got %.1f", dmg, got)
 		}
 	})
 
@@ -928,21 +1097,51 @@ func TestPlayer_useWeapon(t *testing.T) {
 		if p.hp != 20 {
 			t.Errorf("should recover hp by 2%% hp cap, got %.1f", p.hp)
 		}
+
+		p.hp = 0
+		p.perk = 12
+		p.useWeapon(10, p)
+		if p.hp != 11 {
+			t.Errorf("(FENCER) should recover hp by 1.1%% hp cap, got %.1f", p.hp)
+		}
+
+		p.hp = 0
+		p.perk = 13
+		p.useWeapon(10, p)
+		if !equal(p.hp, 22.8) {
+			t.Errorf("(SMITH) should recover hp by 2.28%% hp cap, got %.1f", p.hp)
+		}
 	})
 
 	t.Run("vanguard lance", func(t *testing.T) {
 		p := newTestPlayer()
 		p.weapon = find("vanguard lance")
 
-		dmg := p.strength * 2
-		got := p.useWeapon(p.strength, p)
-		if got != dmg {
+		dmg := 10.0 + 10
+		got := p.useWeapon(10, p)
+		if !equal(got, dmg) {
 			t.Errorf("damage should be %.1f (100%% bonus), got %.1f", dmg, got)
 		}
 
 		got = p.useWeapon(p.strength, p)
 		if got != p.strength {
 			t.Errorf("damage should not be modified again, got %.1f", got)
+		}
+
+		clear(p.effects)
+		p.perk = 12
+		dmg = 10 + 10*0.55
+		got = p.useWeapon(10, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (55%% bonus), got %.1f", dmg, got)
+		}
+
+		clear(p.effects)
+		p.perk = 13
+		dmg = 10 + 10*1.14
+		got = p.useWeapon(10, p)
+		if !equal(got, dmg) {
+			t.Errorf("(SMITH) damage should be %.1f (114%% bonus), got %.1f", dmg, got)
 		}
 	})
 
@@ -952,8 +1151,22 @@ func TestPlayer_useWeapon(t *testing.T) {
 
 		dmg := 100 + 100*0.25
 		got := p.useWeapon(100, p)
-		if got != dmg {
+		if !equal(got, dmg) {
 			t.Errorf("damage should be %.1f (25%% bonus), got %.1f", dmg, got)
+		}
+
+		p.perk = 12
+		dmg = 100 + 100*0.1375
+		got = p.useWeapon(100, p)
+		if !equal(got, dmg) {
+			t.Errorf("(FENCER) damage should be %.1f (13.75%% bonus), got %.1f", dmg, got)
+		}
+
+		p.perk = 13
+		dmg = 100 + 100*0.285
+		got = p.useWeapon(100, p)
+		if !equal(got, dmg) {
+			t.Errorf("(SMITH) damage should be %.1f (28.5%% bonus), got %.1f", dmg, got)
 		}
 	})
 }
@@ -1123,7 +1336,7 @@ func TestPlayer_SetPerk(t *testing.T) {
 		}
 	})
 
-	t.Run("ingenious", func(t *testing.T) {
+	t.Run("wizardry", func(t *testing.T) {
 		p := &Player{}
 		p.energycap = 20
 		p.setPerk(4)

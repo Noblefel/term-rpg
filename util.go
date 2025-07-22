@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var rolltest = -1 // for unit tests
+var fixedroll = -1 // for unit tests
 
 func clearScreen() {
 	fmt.Printf("\033[H")
@@ -48,8 +48,8 @@ func scale(base, growth float64) float64 {
 }
 
 func roll() int {
-	if rolltest >= 0 {
-		return rolltest
+	if fixedroll >= 0 {
+		return fixedroll
 	}
 	return rand.IntN(100)
 }

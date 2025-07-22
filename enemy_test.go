@@ -12,7 +12,7 @@ func TestKnight(t *testing.T) {
 	knight.effects = make(map[string]int)
 
 	t.Run("reinforce armor", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		tempdef := knight.defense
 		knight.attack(p)
@@ -28,7 +28,7 @@ func TestKnight(t *testing.T) {
 	})
 
 	t.Run("strengthen", func(t *testing.T) {
-		rolltest = 15
+		fixedroll = 15
 		p := newTestPlayer()
 		knight.attack(p)
 
@@ -45,7 +45,7 @@ func TestKnight(t *testing.T) {
 	})
 
 	t.Run("attack roll", func(t *testing.T) {
-		rolltest = 30
+		fixedroll = 30
 		p := newTestPlayer()
 		knight.attack(p)
 
@@ -63,7 +63,7 @@ func TestWizard(t *testing.T) {
 	wizard.effects = make(map[string]int)
 
 	t.Run("cast healing", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		wizard.attack(p)
 
@@ -75,7 +75,7 @@ func TestWizard(t *testing.T) {
 	})
 
 	t.Run("immunity", func(t *testing.T) {
-		rolltest = 15
+		fixedroll = 15
 		p := newTestPlayer()
 		wizard.attack(p)
 
@@ -85,7 +85,7 @@ func TestWizard(t *testing.T) {
 	})
 
 	t.Run("barrier", func(t *testing.T) {
-		rolltest = 20
+		fixedroll = 20
 		p := newTestPlayer()
 		wizard.attack(p)
 
@@ -95,7 +95,7 @@ func TestWizard(t *testing.T) {
 	})
 
 	t.Run("confuse", func(t *testing.T) {
-		rolltest = 30
+		fixedroll = 30
 		p := newTestPlayer()
 		wizard.attack(p)
 
@@ -110,7 +110,7 @@ func TestWizard(t *testing.T) {
 	})
 
 	t.Run("enhanced attack", func(t *testing.T) {
-		rolltest = 35
+		fixedroll = 35
 		p := newTestPlayer()
 		wizard.attack(p)
 
@@ -121,7 +121,7 @@ func TestWizard(t *testing.T) {
 	})
 
 	t.Run("fireball", func(t *testing.T) {
-		rolltest = 50
+		fixedroll = 50
 		p := newTestPlayer()
 		wizard.attack(p)
 
@@ -133,7 +133,7 @@ func TestWizard(t *testing.T) {
 	})
 
 	t.Run("lightning", func(t *testing.T) {
-		rolltest = 70
+		fixedroll = 70
 		p := newTestPlayer()
 		wizard.attack(p)
 
@@ -145,7 +145,7 @@ func TestWizard(t *testing.T) {
 	})
 
 	t.Run("summon meteor", func(t *testing.T) {
-		rolltest = 85
+		fixedroll = 85
 		p := newTestPlayer()
 		p.hp = 200
 		p.hpcap = 200
@@ -157,7 +157,7 @@ func TestWizard(t *testing.T) {
 	})
 
 	t.Run("staff attack", func(t *testing.T) {
-		rolltest = 90
+		fixedroll = 90
 		p := newTestPlayer()
 		wizard.attack(p)
 
@@ -201,7 +201,7 @@ func TestVampire(t *testing.T) {
 	vampire.strength = 10
 
 	t.Run("exposed to sunlight", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		vampire.defense = 999
 		vampire.attack(p)
@@ -213,7 +213,7 @@ func TestVampire(t *testing.T) {
 	})
 
 	t.Run("bites lifesteal", func(t *testing.T) {
-		rolltest = 8
+		fixedroll = 8
 		p := newTestPlayer()
 		dmg := vampire.strength + p.hp*0.01
 		vampire.hp = 0
@@ -230,7 +230,7 @@ func TestVampire(t *testing.T) {
 	})
 
 	t.Run("bites poison", func(t *testing.T) {
-		rolltest = 60
+		fixedroll = 60
 		p := newTestPlayer()
 		dmg := vampire.strength + p.hp*0.01
 		vampire.attack(p)
@@ -245,7 +245,7 @@ func TestVampire(t *testing.T) {
 	})
 
 	t.Run("bat swarm", func(t *testing.T) {
-		rolltest = 70
+		fixedroll = 70
 		p := newTestPlayer()
 		vampire.attack(p)
 
@@ -256,7 +256,7 @@ func TestVampire(t *testing.T) {
 	})
 
 	t.Run("claws", func(t *testing.T) {
-		rolltest = 85
+		fixedroll = 85
 		p := newTestPlayer()
 		vampire.attack(p)
 
@@ -275,24 +275,26 @@ func TestDemon(t *testing.T) {
 
 	t.Run("soul absorption", func(t *testing.T) {
 		p := newTestPlayer()
-		p.defense = 99999 // to make sure
-		rolltest = 1
+		p.defense = 10
+		fixedroll = 1
 		dmg := demon.strength + p.hp*0.03
+		dmg -= p.defense / 2
 		demon.attack(p)
 
 		if dmg != 100-p.hp {
-			t.Errorf("damage should be %.1f (take 3%% hp and ignore defense), got %.1f", dmg, 100-p.hp)
+			t.Errorf("damage should be %.1f (take 3%% hp and ignore 50%% defense), got %.1f", dmg, 100-p.hp)
 		}
 	})
 
 	t.Run("hell fire burning", func(t *testing.T) {
-		rolltest = 60
+		fixedroll = 60
 		p := newTestPlayer()
+		p.defense = 10
 		demon.attack(p)
 
-		dmg := demon.strength * 0.8
+		dmg := demon.strength*0.8 - p.defense/2
 		if dmg != 100-p.hp {
-			t.Errorf("damage should be %.1f (80%% strength), got %.1f", dmg, 100-p.hp)
+			t.Errorf("damage should be %.1f (80%% strength and ignore 50%% defense), got %.1f", dmg, 100-p.hp)
 		}
 
 		if p.effects["burning"] != 3 {
@@ -301,20 +303,20 @@ func TestDemon(t *testing.T) {
 	})
 
 	t.Run("basic attacks", func(t *testing.T) {
-		rolltest = 75
+		fixedroll = 75
 		p := newTestPlayer()
 		demon.attack(p)
 
-		dmg := demon.strength
+		dmg := demon.strength - p.defense/2
 		if dmg != 100-p.hp {
-			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+			t.Errorf("damage should be %.1f (100%% strength and ignore 50%% defense), got %.1f", dmg, 100-p.hp)
 		}
 	})
 }
 
 func TestShardling(t *testing.T) {
 	t.Run("spawner", func(t *testing.T) {
-		if newShardling().attr().effects["reflect"] == 0 {
+		if spawnShardling().attr().effects["reflect"] == 0 {
 			t.Error("should start with reflect")
 		}
 	})
@@ -324,7 +326,7 @@ func TestShardling(t *testing.T) {
 	shardling.hp = 100
 
 	t.Run("ram", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		shardling.attack(p)
 
@@ -335,7 +337,7 @@ func TestShardling(t *testing.T) {
 	})
 
 	t.Run("crystal limbs", func(t *testing.T) {
-		rolltest = 40
+		fixedroll = 40
 		p := newTestPlayer()
 		shardling.attack(p)
 
@@ -346,7 +348,7 @@ func TestShardling(t *testing.T) {
 	})
 
 	t.Run("volley of shards", func(t *testing.T) {
-		rolltest = 50
+		fixedroll = 50
 		p := newTestPlayer()
 		shardling.attack(p)
 
@@ -359,7 +361,7 @@ func TestShardling(t *testing.T) {
 	})
 
 	t.Run("spike", func(t *testing.T) {
-		rolltest = 80
+		fixedroll = 80
 		p := newTestPlayer()
 		shardling.attack(p)
 
@@ -376,7 +378,7 @@ func TestGenie(t *testing.T) {
 	genie.effects = make(map[string]int)
 
 	t.Run("hp curse", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		genie.attack(p)
 
@@ -386,7 +388,7 @@ func TestGenie(t *testing.T) {
 	})
 
 	t.Run("strength curse", func(t *testing.T) {
-		rolltest = 5
+		fixedroll = 5
 		p := newTestPlayer()
 		genie.attack(p)
 
@@ -396,7 +398,7 @@ func TestGenie(t *testing.T) {
 	})
 
 	t.Run("defense curse", func(t *testing.T) {
-		rolltest = 10
+		fixedroll = 10
 		p := newTestPlayer()
 		genie.attack(p)
 
@@ -406,7 +408,7 @@ func TestGenie(t *testing.T) {
 	})
 
 	t.Run("energy cap curse", func(t *testing.T) {
-		rolltest = 15
+		fixedroll = 15
 		p := newTestPlayer()
 		p.name = "player"
 		genie.attack(p)
@@ -420,7 +422,7 @@ func TestGenie(t *testing.T) {
 		p := newTestPlayer()
 		p.hp = 999
 		p.strength = 9999
-		rolltest = 18
+		fixedroll = 18
 		genie.attack(p)
 
 		// player should be dead because genie make us self attack
@@ -432,7 +434,7 @@ func TestGenie(t *testing.T) {
 
 	t.Run("force-field", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 31
+		fixedroll = 31
 		genie.attack(p)
 
 		if genie.effects["force-field"] != 5 {
@@ -442,7 +444,7 @@ func TestGenie(t *testing.T) {
 
 	t.Run("sandstorm", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 38
+		fixedroll = 38
 		genie.attack(p)
 
 		dmg := genie.strength*0.5 + 40
@@ -453,7 +455,7 @@ func TestGenie(t *testing.T) {
 
 	t.Run("blast", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 60
+		fixedroll = 60
 		genie.attack(p)
 
 		dmg := genie.strength * 1.13
@@ -464,7 +466,7 @@ func TestGenie(t *testing.T) {
 
 	t.Run("punch", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 85
+		fixedroll = 85
 		genie.attack(p)
 
 		dmg := genie.strength
@@ -480,7 +482,7 @@ func TestCelestial(t *testing.T) {
 	celestial.effects = make(map[string]int)
 
 	t.Run("healing aura", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		celestial.attack(p)
 
@@ -490,7 +492,7 @@ func TestCelestial(t *testing.T) {
 	})
 
 	t.Run("blinding light", func(t *testing.T) {
-		rolltest = 10
+		fixedroll = 10
 		p := newTestPlayer()
 		celestial.attack(p)
 
@@ -505,7 +507,7 @@ func TestCelestial(t *testing.T) {
 	})
 
 	t.Run("holy fire burning", func(t *testing.T) {
-		rolltest = 30
+		fixedroll = 30
 		p := newTestPlayer()
 		celestial.attack(p)
 
@@ -520,7 +522,7 @@ func TestCelestial(t *testing.T) {
 	})
 
 	t.Run("basic attack", func(t *testing.T) {
-		rolltest = 40
+		fixedroll = 40
 		p := newTestPlayer()
 		celestial.attack(p)
 
@@ -563,7 +565,7 @@ func TestUndead(t *testing.T) {
 	undead.strength = 10
 
 	t.Run("vomit poison", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		undead.attack(p)
 
@@ -578,7 +580,7 @@ func TestUndead(t *testing.T) {
 	})
 
 	t.Run("fellow undeads", func(t *testing.T) {
-		rolltest = 8
+		fixedroll = 8
 		p := newTestPlayer()
 		undead.attack(p)
 
@@ -591,7 +593,7 @@ func TestUndead(t *testing.T) {
 	})
 
 	t.Run("bite", func(t *testing.T) {
-		rolltest = 28
+		fixedroll = 28
 		p := newTestPlayer()
 		undead.attack(p)
 
@@ -602,7 +604,7 @@ func TestUndead(t *testing.T) {
 	})
 
 	t.Run("basic", func(t *testing.T) {
-		rolltest = 35
+		fixedroll = 35
 		p := newTestPlayer()
 		undead.attack(p)
 
@@ -638,7 +640,7 @@ func TestScorpion(t *testing.T) {
 	})
 
 	t.Run("venom", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		scorpion.attack(p)
 
@@ -653,7 +655,7 @@ func TestGoblin(t *testing.T) {
 	goblin.strength = 10
 
 	t.Run("powder", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		goblin.attack(p)
 
@@ -669,7 +671,7 @@ func TestGoblin(t *testing.T) {
 
 	t.Run("leap", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 12
+		fixedroll = 12
 		goblin.attack(p)
 
 		dmg := goblin.strength * 1.25
@@ -680,7 +682,7 @@ func TestGoblin(t *testing.T) {
 
 	t.Run("rapid strike", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 24
+		fixedroll = 24
 		goblin.attack(p)
 
 		dmg := goblin.strength * 1.1
@@ -691,7 +693,7 @@ func TestGoblin(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 36
+		fixedroll = 36
 		goblin.attack(p)
 
 		dmg := goblin.strength
@@ -703,7 +705,7 @@ func TestGoblin(t *testing.T) {
 
 func TestInfernal(t *testing.T) {
 	t.Run("spawner", func(t *testing.T) {
-		if newInfernal().attr().effects["burning immunity"] == 0 {
+		if spawnInfernal().attr().effects["burning immunity"] == 0 {
 			t.Error("should start with burning immunity effect")
 		}
 	})
@@ -712,7 +714,7 @@ func TestInfernal(t *testing.T) {
 	infernal.strength = 10
 
 	t.Run("burning severe", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		infernal.attack(p)
 
@@ -728,7 +730,7 @@ func TestInfernal(t *testing.T) {
 
 	t.Run("enhanced energy", func(t *testing.T) {
 		str := infernal.strength
-		rolltest = 30
+		fixedroll = 30
 		infernal.attack(&infernal)
 
 		if infernal.strength == str {
@@ -738,7 +740,7 @@ func TestInfernal(t *testing.T) {
 
 	t.Run("magma shield", func(t *testing.T) {
 		def := infernal.defense
-		rolltest = 40
+		fixedroll = 40
 		infernal.attack(&infernal)
 
 		if infernal.defense == def {
@@ -748,7 +750,7 @@ func TestInfernal(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 50
+		fixedroll = 50
 		infernal.attack(p)
 
 		if p.effects["burning"] != 2 {
@@ -764,7 +766,7 @@ func TestInfernal(t *testing.T) {
 
 func TestVineMonster(t *testing.T) {
 	t.Run("spawner", func(t *testing.T) {
-		if newVineMonster().attr().effects["reflect low"] == 0 {
+		if spawnVineMonster().attr().effects["reflect low"] == 0 {
 			t.Error("should start with reflect low effect")
 		}
 	})
@@ -773,7 +775,7 @@ func TestVineMonster(t *testing.T) {
 	vine.strength = 10
 
 	t.Run("ensnare", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		vine.attack(p)
 
@@ -788,7 +790,7 @@ func TestVineMonster(t *testing.T) {
 	})
 
 	t.Run("burst of thorns", func(t *testing.T) {
-		rolltest = 30
+		fixedroll = 30
 		p := newTestPlayer()
 		vine.attack(p)
 
@@ -800,7 +802,7 @@ func TestVineMonster(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 45
+		fixedroll = 45
 		vine.attack(p)
 
 		dmg := vine.strength
@@ -810,18 +812,18 @@ func TestVineMonster(t *testing.T) {
 	})
 }
 
-func TestArcticWarrior(t *testing.T) {
+func TestArctic(t *testing.T) {
 	t.Run("spawner", func(t *testing.T) {
-		if newArcticWarrior().attr().effects["frozen immunity"] == 0 {
+		if spawnArctic().attr().effects["frozen immunity"] == 0 {
 			t.Error("should start with frozen immunity effect")
 		}
 	})
 
-	var arctic arcticWarrior
+	var arctic arctic
 	arctic.strength = 10
 
 	t.Run("frozen attack", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		arctic.attack(p)
 
@@ -831,7 +833,7 @@ func TestArcticWarrior(t *testing.T) {
 	})
 
 	t.Run("snowstorm", func(t *testing.T) {
-		rolltest = 20
+		fixedroll = 20
 		p := newTestPlayer()
 		arctic.attack(p)
 
@@ -842,7 +844,7 @@ func TestArcticWarrior(t *testing.T) {
 	})
 
 	t.Run("avalanche", func(t *testing.T) {
-		rolltest = 35
+		fixedroll = 35
 		p := newTestPlayer()
 		arctic.attack(p)
 
@@ -854,7 +856,7 @@ func TestArcticWarrior(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 43
+		fixedroll = 43
 		arctic.attack(p)
 
 		dmg := arctic.strength
@@ -864,43 +866,49 @@ func TestArcticWarrior(t *testing.T) {
 	})
 }
 
-func TestJungleWarrior(t *testing.T) {
+func TestChieftain(t *testing.T) {
 	t.Run("spawner", func(t *testing.T) {
-		if newJungleWarrior().attr().effects["poison immunity"] == 0 {
+		if spawnChieftain().attr().effects["poison immunity"] == 0 {
 			t.Error("should start with poison immunity effect")
 		}
 	})
 
-	var jungle jungleWarrior
-	jungle.strength = 10
-	jungle.effects = make(map[string]int)
+	// prevent overlapping paralel tests
+	new := func() chieftain {
+		var chieftain chieftain
+		chieftain.strength = 10
+		chieftain.effects = make(map[string]int)
+		return chieftain
+	}
 
 	t.Run("venom spear", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
-		jungle.attack(p)
+		chieftain := new()
+		chieftain.attack(p)
 
 		if p.effects["shiver"] != 3 {
 			t.Errorf("should inflict shiver for 3 turns, got %d", p.effects["shiver"])
 		}
 
-		dmg := jungle.strength * 1
+		dmg := chieftain.strength * 1
 		if dmg != 100-p.hp {
 			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
 		}
 	})
 
 	t.Run("ancestral spirits", func(t *testing.T) {
-		rolltest = 14
+		fixedroll = 14
 		p := newTestPlayer()
-		jungle.attack(p)
+		chieftain := new()
+		chieftain.attack(p)
 
-		if jungle.effects["vitality"] != 4 {
-			t.Errorf("should get vitality for 4 turns, got %d", jungle.effects["vitality"])
+		if chieftain.effects["vitality"] != 4 {
+			t.Errorf("should get vitality for 4 turns, got %d", chieftain.effects["vitality"])
 		}
-		clear(jungle.effects)
+		clear(chieftain.effects)
 
-		dmg := jungle.strength * 0.8
+		dmg := chieftain.strength * 0.8
 		dmg += dmg * 0.05 // vitality
 		if !equal(dmg, 100-p.hp) {
 			t.Errorf("damage should be %.1f (80%% strength + 5%%), got %.1f", dmg, 100-p.hp)
@@ -908,20 +916,21 @@ func TestJungleWarrior(t *testing.T) {
 	})
 
 	t.Run("ancestral roar", func(t *testing.T) {
-		rolltest = 28
+		fixedroll = 28
 		p := newTestPlayer()
-		jungle.attack(p)
+		chieftain := new()
+		chieftain.attack(p)
 
-		if jungle.effects["vitality"] != 2 {
-			t.Errorf("should get vitality for 2 turns, got %d", jungle.effects["vitality"])
+		if chieftain.effects["vitality"] != 2 {
+			t.Errorf("should get vitality for 2 turns, got %d", chieftain.effects["vitality"])
 		}
-		clear(jungle.effects)
+		clear(chieftain.effects)
 
 		if p.effects["shiver"] != 2 {
 			t.Errorf("should inflict shiver for 2 turns, got %d", p.effects["shiver"])
 		}
 
-		dmg := jungle.strength * 1.3
+		dmg := chieftain.strength * 1.3
 		dmg += dmg * 0.05 // vitality
 		if !equal(dmg, 100-p.hp) {
 			t.Errorf("damage should be %.1f (130%% strength + 5%%), got %.1f", dmg, 100-p.hp)
@@ -929,11 +938,12 @@ func TestJungleWarrior(t *testing.T) {
 	})
 
 	t.Run("leap", func(t *testing.T) {
-		rolltest = 35
+		fixedroll = 35
 		p := newTestPlayer()
-		jungle.attack(p)
+		chieftain := new()
+		chieftain.attack(p)
 
-		dmg := jungle.strength * 1.2
+		dmg := chieftain.strength * 1.2
 		if dmg != 100-p.hp {
 			t.Errorf("damage should be %.1f (120%% strength), got %.1f", dmg, 100-p.hp)
 		}
@@ -941,22 +951,23 @@ func TestJungleWarrior(t *testing.T) {
 
 	t.Run("basic", func(t *testing.T) {
 		p := newTestPlayer()
-		rolltest = 45
-		jungle.attack(p)
+		fixedroll = 45
+		chieftain := new()
+		chieftain.attack(p)
 
-		dmg := jungle.strength
+		dmg := chieftain.strength
 		if dmg != 100-p.hp {
 			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
 		}
 	})
 }
 
-func TestLeechMonster(t *testing.T) {
-	var leech leechMonster
+func TestGiantLeech(t *testing.T) {
+	var leech giantLeech
 	leech.strength = 10
 
 	t.Run("bleeding", func(t *testing.T) {
-		rolltest = 1
+		fixedroll = 1
 		p := newTestPlayer()
 		p.defense = 1
 		dmg := leech.strength + p.hp*0.1 - p.defense*0.75
@@ -973,7 +984,7 @@ func TestLeechMonster(t *testing.T) {
 	})
 
 	t.Run("basic", func(t *testing.T) {
-		rolltest = 25
+		fixedroll = 25
 		p := newTestPlayer()
 		p.defense = 1
 
@@ -985,6 +996,94 @@ func TestLeechMonster(t *testing.T) {
 			t.Errorf("damage should be %.1f (100%% strength, 20%% target hp, x2.3 target defense value), got %.1f", dmg, 100-p.hp)
 		}
 	})
+}
+
+func TestPirate(t *testing.T) {
+	var pirate pirate
+	pirate.strength = 10
+
+	t.Run("steal", func(t *testing.T) {
+		fixedroll = 1
+		p := newTestPlayer()
+		p.gold = 100
+
+		min := 5 + p.gold/100
+		max := 5 + p.gold*5/100
+		pirate.attack(p)
+		got := 100 - p.gold
+
+		if got < min || got > max {
+			t.Errorf("should steal between %d to %d of player golds (5 + 1-5%%), got %d", min, max, got)
+		}
+	})
+
+	t.Run("whirl", func(t *testing.T) {
+		fixedroll = 30
+		p := newTestPlayer()
+		pirate.attack(p)
+
+		dmg := pirate.strength * 1.1
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (110%% strength), got %.1f", dmg, 100-p.hp)
+		}
+
+		if p.effects["bleeding"] != 5 {
+			t.Errorf("should inflict bleeding with 5 severity, got %d", p.effects["bleeding"])
+		}
+	})
+
+	t.Run("basic", func(t *testing.T) {
+		fixedroll = 60
+		p := newTestPlayer()
+		pirate.attack(p)
+
+		dmg := pirate.strength
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (100%% strength), got %.1f", dmg, 100-p.hp)
+		}
+	})
+}
+
+func TestGladiator(t *testing.T) {
+	var gladiator gladiator
+	gladiator.strength = 10
+	gladiator.effects = make(map[string]int)
+
+	t.Run("basic", func(t *testing.T) {
+		fixedroll = 15
+		p := newTestPlayer()
+		gladiator.attack(p)
+
+		dmg := gladiator.strength * 0.6 * 2
+		if dmg != 100-p.hp {
+			t.Errorf("damage should be %.1f (60%% strength twice), got %.1f", dmg, 100-p.hp)
+		}
+	})
+
+	t.Run("taunt", func(t *testing.T) {
+		fixedroll = 1
+		p := newTestPlayer()
+		gladiator.attack(p)
+
+		if gladiator.effects["strengthen"] != 2 {
+			t.Errorf("should get strengthen for 2 turns, got %d", gladiator.effects["strengthen"])
+		}
+	})
+}
+
+func TestSorcerer(t *testing.T) {
+	var sorcerer sorcerer
+	sorcerer.strength = 10
+
+	p := newTestPlayer()
+	p.defense = 99999         // to make sure it ignore defense
+	p.effects["immunity"] = 1 // to make sure it ignore effects
+	sorcerer.attack(p)
+
+	dmg := sorcerer.strength
+	if dmg != 100-p.hp {
+		t.Errorf("damage should be %.1f (100%% strength, ignore defense & effects), got %.1f", dmg, 100-p.hp)
+	}
 }
 
 // quick fix floating issue
